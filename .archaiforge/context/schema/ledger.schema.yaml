@@ -1,0 +1,62 @@
+type: object
+properties:
+  plans:
+    type: array
+    items:
+      $ref: "#/definitions/plan"
+  current_state:
+    type: object
+    description: "Snapshot of the active context if needed"
+
+definitions:
+  plan:
+    type: object
+    required: ["id", "objective", "status", "tasks"]
+    properties:
+      id:
+        type: string
+        description: "Unique identifier for the plan (e.g., PLAN-2025-12-09-01)"
+      objective:
+        type: string
+        description: "High-level goal of this plan"
+      status:
+        type: string
+        enum: ["active", "completed", "archived", "draft", "paused"]
+      constraints:
+        type: array
+        items:
+          type: string
+        description: "Hard limits and requirements for this plan"
+      uncertainty:
+        type: array
+        items:
+          type: string
+        description: "Open questions or ambiguities to be resolved (Realm3X hook)"
+      tasks:
+        type: array
+        items:
+          type: object
+          required: ["id", "summary", "status"]
+          properties:
+            id:
+              type: string
+            summary:
+              type: string
+            status:
+              type: string
+              enum: ["todo", "in_progress", "done", "blocked", "skipped"]
+      reflections:
+        type: array
+        items:
+          type: string
+        description: "Insights and lessons learned during execution"
+      error_check:
+        type: object
+        properties:
+          last_run:
+            type: string
+            format: "date-time"
+          issues_found:
+            type: array
+            items:
+              type: string

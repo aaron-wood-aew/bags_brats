@@ -1,0 +1,11 @@
+{
+  "archaiforge_version": "3.0.0-beta",
+  "project": {
+    "name": "bags_brats"
+  },
+  "environment": {
+    "mode": "antigravity_companion"
+  },
+  "initialized": "2025-12-30T20:26:09.964Z",
+  "context_path": "/Users/Aaron/projects/archaiforge/context"
+}

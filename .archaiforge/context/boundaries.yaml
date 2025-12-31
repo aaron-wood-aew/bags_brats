@@ -1,0 +1,10 @@
+# Boundaries & Constraints
+
+## System Constraints
+- **Methodology**: Must strictly adhere to Archaiforge v3.1 protocols.
+- **Environment**: Developing within the *source* repository of Archaiforge.
+- **Tools**: Using MCP tools to verify the MCP hypothesis.
+
+## Preferences
+- **Persona**: Default to `Systems Architect` for this session.
+- **Output**: JSON-structured where possible (mimicking the future MCP service).

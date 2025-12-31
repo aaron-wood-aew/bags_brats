@@ -1,0 +1,112 @@
+:root {
+  /* Cornerstone Brand Colors */
+  --brand-teal: #5dc6cf;
+  --brand-teal-glow: rgba(92, 198, 207, 0.4);
+  --brand-navy: #0a141a;
+
+  /* Shared Tokens */
+  --font-main: 'Outfit', sans-serif;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='dark'],
+:root:not([data-theme='light']) {
+  --bg: #0a141a;
+  --bg-gradient: radial-gradient(circle at top right, #132029, #0a141a);
+  --card-bg: rgba(19, 32, 41, 0.8);
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.08);
+  --glass: rgba(255, 255, 255, 0.03);
+  --input-bg: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='light'] {
+  --bg: #f8fafc;
+  --bg-gradient: radial-gradient(circle at top right, #f1f5f9, #f8fafc);
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: rgba(15, 23, 42, 0.08);
+  --glass: rgba(0, 0, 0, 0.02);
+  --input-bg: #ffffff;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg);
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.glass-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand-teal), #48abb3);
+  color: #0a141a;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 4px 14px var(--brand-teal-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--brand-teal-glow);
+  filter: brightness(1.1);
+}
+
+.input-field {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  color: var(--text);
+  width: 100%;
+  margin-bottom: 16px;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--brand-teal);
+  box-shadow: 0 0 0 4px var(--brand-teal-glow);
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.vibrant-text {
+  background: linear-gradient(to right, var(--brand-teal), #48abb3);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

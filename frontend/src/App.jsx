@@ -1,0 +1,26 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import PlayerDashboard from './pages/PlayerDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import SpectatorView from './pages/SpectatorView';
+
+const App = () => {
+  return (
+    <Router>
+      <div style={{ minHeight: '100vh', padding: '20px' }}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<PlayerDashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/spectator" element={<SpectatorView />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+};
+
+export default App;

@@ -1,0 +1,22 @@
+constraints:
+  technical:
+    - Node.js >= 16
+  timeline:
+    - Flexible
+  budget:
+    - No paid services in MVP
+preferences:
+  code_style: functional where possible
+  testing: unit tests for critical paths
+  documentation: inline comments + README
+persona_synthesis:
+  enabled: true
+  default_domain: software-development
+environment:
+  mode: antigravity
+  lightweight_ledger: true
+  planning_source: antigravity_workspace
+  notes:
+    - Archaiforge operates in companion mode
+    - Detailed plans live in Antigravity artifacts
+    - Ledger captures strategic outcomes only
