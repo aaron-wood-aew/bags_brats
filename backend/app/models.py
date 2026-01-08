@@ -30,6 +30,8 @@ class User(BaseModel):
         self.is_proxy = data.get('is_proxy', False) # Created by admin, no device
         self.checked_in = data.get('checked_in', False)
         self.checked_in_at = data.get('checked_in_at')
+        self.is_power_player = data.get('is_power_player', False)
+        self.power_player_used = data.get('power_player_used', False)  # Reset when all power players used
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -69,6 +71,8 @@ class Tournament(BaseModel):
         self.dates = data.get('dates', []) # List of ISO date strings
         self.status = data.get('status', 'upcoming')
         self.current_day_index = data.get('current_day_index', 0)
+        self.current_round = data.get('current_round', 0)  # 0 = no rounds started
+        self.rounds_per_day = data.get('rounds_per_day', 3)  # Number of rounds per day
         self.start_times = data.get('start_times', []) # List of ISO time strings for each date
 
     @classmethod
@@ -106,6 +110,9 @@ class Game(BaseModel):
         self.start_time = data.get('start_time')
         self.end_time = data.get('end_time')
         self.submitted_by = data.get('submitted_by')
+        self.is_power_game = data.get('is_power_game', False)  # True if 1v2 game
+        self.day_index = data.get('day_index', 0)  # Which tournament day (0-indexed)
+        self.round_number = data.get('round_number', 1)  # Which round (1-indexed)
 
     def save(self, mongo):
         data = self.to_dict()
@@ -116,5 +123,46 @@ class Game(BaseModel):
         else:
             data.pop('_id', None)
             res = mongo.db.games.insert_one(data)
+            self._id = res.inserted_id
+            return res.inserted_id
+
+
+class Team(BaseModel):
+    """Persistent daily teams - teams stay the same for all rounds in a day."""
+    collection_name = 'teams'
+
+    def __init__(self, data=None):
+        super().__init__(data)
+        data = data or {}
+        self.tournament_id = data.get('tournament_id')
+        self.day_index = data.get('day_index', 0)
+        self.player_ids = data.get('player_ids', [])  # 2 players for normal, 1 for power
+        self.is_power_team = data.get('is_power_team', False)
+        self.team_number = data.get('team_number')  # For display: Team 1, Team 2, etc.
+
+    @classmethod
+    def find_for_day(cls, mongo, tournament_id, day_index):
+        teams = list(mongo.db.teams.find({
+            'tournament_id': str(tournament_id),
+            'day_index': day_index
+        }))
+        return [cls(t) for t in teams]
+
+    @classmethod
+    def delete_for_day(cls, mongo, tournament_id, day_index):
+        mongo.db.teams.delete_many({
+            'tournament_id': str(tournament_id),
+            'day_index': day_index
+        })
+
+    def save(self, mongo):
+        data = self.to_dict()
+        if data.get('_id'):
+            _id = ObjectId(data.pop('_id'))
+            mongo.db.teams.update_one({'_id': _id}, {'$set': data})
+            return _id
+        else:
+            data.pop('_id', None)
+            res = mongo.db.teams.insert_one(data)
             self._id = res.inserted_id
             return res.inserted_id

@@ -10,7 +10,8 @@ const Register = () => {
         name: '',
         email: '',
         phone: '',
-        password: ''
+        password: '',
+        is_power_player: false
     });
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -99,6 +100,36 @@ const Register = () => {
                                 required
                             />
                         </div>
+                    </div>
+
+                    {/* Power Player Opt-in */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px',
+                        padding: '16px',
+                        background: 'rgba(251, 191, 36, 0.1)',
+                        border: '1px solid rgba(251, 191, 36, 0.3)',
+                        borderRadius: '12px',
+                        marginTop: '16px'
+                    }}>
+                        <input
+                            type="checkbox"
+                            id="powerPlayer"
+                            name="is_power_player"
+                            checked={formData.is_power_player}
+                            onChange={(e) => setFormData({ ...formData, is_power_player: e.target.checked })}
+                            style={{ marginTop: '4px', cursor: 'pointer', width: '18px', height: '18px' }}
+                        />
+                        <label htmlFor="powerPlayer" style={{ flex: 1, cursor: 'pointer' }}>
+                            <div style={{ fontWeight: '700', color: '#fbbf24', marginBottom: '4px', fontSize: '15px' }}>
+                                ⚡ Become a Power Player
+                            </div>
+                            <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                                Power Players can be selected to play solo (1v2) when there's an odd number of players.
+                                More game time, more challenge, more glory!
+                            </div>
+                        </label>
                     </div>
 
                     {error && <p style={{ color: '#ef4444', marginTop: '16px', fontSize: '14px', textAlign: 'center' }}>{error}</p>}

@@ -88,6 +88,18 @@ const AdminUserManagement = () => {
         }
     };
 
+    const togglePowerPlayer = async (userId, currentStatus) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`${API_URL}/admin/users/${userId}`, { is_power_player: !currentStatus }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchUsers();
+        } catch (err) {
+            console.error("Failed to toggle power player", err);
+        }
+    };
+
     if (loading) return <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px' }}>Loading Roster...</div>;
 
     return (
@@ -113,6 +125,7 @@ const AdminUserManagement = () => {
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                             <th style={{ padding: '12px' }}>Player</th>
                             <th style={{ padding: '12px' }}>Status</th>
+                            <th style={{ padding: '12px' }}>Power</th>
                             <th style={{ padding: '12px' }}>Role</th>
                             <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
                         </tr>
@@ -132,6 +145,38 @@ const AdminUserManagement = () => {
                                     ) : (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '13px' }}>
                                             <Circle size={14} /> Absent
+                                        </div>
+                                    )}
+                                </td>
+                                <td style={{ padding: '12px', cursor: 'pointer' }} onClick={() => togglePowerPlayer(user._id, user.is_power_player)}>
+                                    {user.is_power_player ? (
+                                        <div style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            padding: '4px 10px',
+                                            background: 'rgba(251, 191, 36, 0.2)',
+                                            border: '1px solid #fbbf24',
+                                            borderRadius: '6px',
+                                            color: '#fbbf24',
+                                            fontSize: '13px',
+                                            fontWeight: '700'
+                                        }}>
+                                            ⚡ Yes
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            padding: '4px 10px',
+                                            background: 'rgba(255,255,255,0.03)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: '6px',
+                                            color: 'var(--text-muted)',
+                                            fontSize: '13px'
+                                        }}>
+                                            No
                                         </div>
                                     )}
                                 </td>

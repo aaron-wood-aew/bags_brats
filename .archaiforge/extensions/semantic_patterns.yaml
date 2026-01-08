@@ -1,0 +1,2508 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# ⚜️ ARCHAIFORGE PROPRIETARY - SEMANTIC PATTERN LIBRARY
+# ═══════════════════════════════════════════════════════════════════════════════
+# This file is part of the Archaiforge Semantic UI™ methodology.
+# CONFIDENTIAL AND PROPRIETARY. Unauthorized copying, modification, or
+# distribution is strictly prohibited.
+#
+# © 2025 Archaiforge. All rights reserved.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: "2.0"
+library: semantic_pattern_library
+
+# =========================
+# PATTERN INDEX (Read First)
+# =========================
+# Agents: Scan this index to find relevant patterns.
+# Only expand detailed sections when needed.
+
+index:
+  description: >
+    High-level index of all Semantic UI + Interaction Patterns.
+    Agents should read this first, select relevant pattern(s),
+    then expand into detailed sections below.
+  
+  patterns:
+    # ORIGINAL PATTERNS
+    - id: pattern.auth.login
+      name: "Authentication → Landing"
+      role: entry
+      summary: "Login, redirect, validation, identity flow."
+      shape_tags: [S, H, P]
+      
+    - id: pattern.form.standard
+      name: "Standard Form Interaction"
+      role: edit_or_create
+      summary: "Form capture/update with validation."
+      shape_tags: [S, H, E]
+      
+    - id: pattern.dashboard.main
+      name: "Dashboard / Workspace"
+      role: primary_hub
+      summary: "Main workspace; navigation, cards, quick actions."
+      shape_tags: [S, A, E]
+      
+    - id: pattern.modal.standard
+      name: "Modal Interaction"
+      role: contextual_task
+      summary: "Focused task in modal without page navigation."
+      shape_tags: [S, H, P]
+      
+    - id: pattern.wizard.multi_step
+      name: "Multi-step Wizard"
+      role: guided_process
+      summary: "Step-based process with progress tracking."
+      shape_tags: [S, H, P, E]
+      
+    - id: pattern.search.workspace
+      name: "Search + Filter Workspace"
+      role: discovery
+      summary: "Search/filter datasets with real-time updates."
+      shape_tags: [S, H, P]
+      
+    - id: pattern.empty_state.standard
+      name: "Empty State / First-time"
+      role: onboarding
+      summary: "Guidance when no data exists; first-action prompts."
+      shape_tags: [S, A, E]
+      
+    - id: pattern.bulk.batch_actions
+      name: "Bulk Selection & Batch Actions"
+      role: power_user_management
+      summary: "Select multiple items, execute batch operations."
+      shape_tags: [H, P, E]
+      
+    - id: pattern.inspector.side_panel
+      name: "Side Panel / Inspector"
+      role: contextual_details
+      summary: "Contextual details alongside main canvas."
+      shape_tags: [S, A, E]
+      
+    - id: pattern.edit.inline
+      name: "Inline Editing"
+      role: micro_update
+      summary: "Edit directly in place without navigation."
+      shape_tags: [H, E]
+      
+    - id: pattern.picker.resource_modal
+      name: "Resource Picker Modal"
+      role: cross_linking
+      summary: "Select and attach related entities."
+      shape_tags: [S, P, E]
+      
+    - id: pattern.activity.feed
+      name: "Activity Feed / Timeline"
+      role: history_context
+      summary: "Chronological event feed for entities."
+      shape_tags: [S, E]
+      
+    - id: pattern.comparison.split_view
+      name: "Comparison / Split View"
+      role: evaluation
+      summary: "Side-by-side entity comparison."
+      shape_tags: [S, A, E]
+      
+    - id: pattern.command.global_palette
+      name: "Global Command Palette"
+      role: power_navigation
+      summary: "Universal search/command surface."
+      shape_tags: [H, P, E]
+      
+    - id: pattern.nav.left_rail
+      name: "Left Rail Navigation"
+      role: global_navigation
+      summary: "Persistent left navigation rail."
+      shape_tags: [S, P, A]
+
+    # INTELLIGENCE EXPRESSION PATTERNS
+    - id: pattern.intelligence.reasoning_trace
+      name: "Reasoning Trace Display"
+      role: transparency_and_trust
+      summary: "Show AI thinking process step-by-step."
+      shape_tags: [S, A, E]
+
+    - id: pattern.intelligence.confidence_gradient
+      name: "Confidence Gradient Visualization"
+      role: uncertainty_visualization
+      summary: "Visualize confidence levels across insights."
+      shape_tags: [S, A, E]
+
+    - id: pattern.intelligence.lens_switcher
+      name: "Lens/Persona Switcher"
+      role: perspective_control
+      summary: "Toggle analytical perspectives."
+      shape_tags: [H, P, A]
+
+    - id: pattern.intelligence.semantic_region_canvas
+      name: "Semantic Region Canvas"
+      role: semantic_visualization
+      summary: "Display semantic map with regions."
+      shape_tags: [S, A, E]
+
+    - id: pattern.intelligence.movement_animation
+      name: "Intelligence Movement Animation"
+      role: intelligence_evolution
+      summary: "Show items moving between semantic regions."
+      shape_tags: [S, E]
+
+    # PROGRESSIVE DISCLOSURE PATTERNS
+    - id: pattern.disclosure.accordion_deep
+      name: "Deep Accordion"
+      role: depth_navigation
+      summary: "Multi-level expansion for hierarchical content."
+      shape_tags: [S, H, E]
+
+    - id: pattern.disclosure.context_drawer
+      name: "Context Drawer"
+      role: contextual_depth
+      summary: "Slide-out drawer revealing depth."
+      shape_tags: [S, A, E]
+
+    # REAL-TIME & COLLABORATION PATTERNS
+    - id: pattern.realtime.live_indicator
+      name: "Live Data Indicator"
+      role: temporal_awareness
+      summary: "Show real-time updates and staleness."
+      shape_tags: [S, E]
+
+    - id: pattern.collaboration.presence
+      name: "Collaborative Presence"
+      role: multi_user_awareness
+      summary: "Show who's viewing/editing."
+      shape_tags: [S, A, E]
+
+    - id: pattern.collaboration.comments_thread
+      name: "Comments Thread"
+      role: feedback_and_annotation
+      summary: "Inline commenting on content."
+      shape_tags: [S, H, E]
+
+    # DATA VISUALIZATION PATTERNS
+    - id: pattern.viz.semantic_graph
+      name: "Semantic Graph"
+      role: relationship_exploration
+      summary: "Network visualization of relationships."
+      shape_tags: [S, A, E]
+
+    - id: pattern.viz.heatmap_matrix
+      name: "Heatmap Matrix"
+      role: pattern_recognition
+      summary: "Matrix for multi-dimensional comparison."
+      shape_tags: [S, A, E]
+
+    - id: pattern.viz.timeline_gantt
+      name: "Timeline/Gantt View"
+      role: temporal_planning
+      summary: "Temporal planning with dependencies."
+      shape_tags: [S, A, E]
+
+    # POWER USER / EXPERT PATTERNS
+    - id: pattern.expert.keyboard_shortcuts
+      name: "Keyboard Shortcuts System"
+      role: efficiency
+      summary: "Comprehensive keyboard navigation."
+      shape_tags: [H, P, E]
+
+    - id: pattern.expert.advanced_filters
+      name: "Advanced Filter Builder"
+      role: precision_discovery
+      summary: "Complex multi-criteria filtering."
+      shape_tags: [S, H, P]
+
+    - id: pattern.expert.bulk_edit
+      name: "Bulk Field Editor"
+      role: mass_management
+      summary: "Edit multiple items simultaneously."
+      shape_tags: [H, P, E]
+
+    # ONBOARDING & GUIDANCE PATTERNS
+    - id: pattern.onboarding.product_tour
+      name: "Product Tour"
+      role: education
+      summary: "Guided walkthrough of features."
+      shape_tags: [S, H, P]
+
+    - id: pattern.onboarding.contextual_help
+      name: "Contextual Help"
+      role: just_in_time_learning
+      summary: "Inline help tooltips."
+      shape_tags: [S, E]
+
+    # ERROR & RECOVERY PATTERNS
+    - id: pattern.error.diagnostic_panel
+      name: "Diagnostic Panel"
+      role: troubleshooting
+      summary: "Detailed error explanation."
+      shape_tags: [S, E]
+
+    - id: pattern.error.undo_history
+      name: "Undo History"
+      role: mistake_recovery
+      summary: "Action history with undo/redo."
+      shape_tags: [H, P, E]
+
+    # SETTINGS & CONFIGURATION PATTERNS
+    - id: pattern.settings.tabbed_preferences
+      name: "Tabbed Settings"
+      role: configuration_management
+      summary: "Multi-category settings."
+      shape_tags: [S, H, E]
+
+    - id: pattern.settings.preview_live
+      name: "Live Preview Settings"
+      role: safe_experimentation
+      summary: "Preview changes before applying."
+      shape_tags: [S, A, E]
+
+    # EXPORT & SHARING PATTERNS
+    - id: pattern.export.format_selector
+      name: "Export Format Selector"
+      role: data_portability
+      summary: "Export with format options."
+      shape_tags: [S, H, P]
+
+    - id: pattern.sharing.permissions_modal
+      name: "Share Permissions Modal"
+      role: access_management
+      summary: "Share with permission controls."
+      shape_tags: [S, H, P]
+
+    # MOBILE-SPECIFIC PATTERNS
+    - id: pattern.mobile.bottom_sheet
+      name: "Bottom Sheet (Mobile)"
+      role: mobile_actions
+      summary: "Mobile contextual menu."
+      shape_tags: [S, H, P]
+
+    - id: pattern.mobile.swipe_actions
+      name: "Swipe Actions (Mobile)"
+      role: mobile_efficiency
+      summary: "Swipe gestures for actions."
+      shape_tags: [H, E]
+
+meta:
+  description: >
+    Comprehensive Semantic UI pattern library for journey flows.
+    Encodes dominant interaction patterns and sub-language rules so MDA agents
+    can reason about confirmations, loaders, progress, navigation, intelligence expression,
+    and semantic meaning visualization.
+  last_updated: 2025-12-10
+  version: 1.0
+  mda:
+    card_type: pattern_library
+    scope: ui_journey_patterns
+    owner: "Preston McCauley"
+    notes: >
+      Each pattern can be loaded as an MDA card. SHAPE tags indicate why
+      the pattern exists and where it tends to emerge.
+      Version 1.0 adds 26 new patterns focused on intelligence expression,
+      progressive disclosure, collaboration, visualization, and mobile.
+  
+  semantic_ui_integration: >
+    This pattern library works alongside semantic_ui.md.
+    - semantic_ui.md defines the abstract meaning layer (dimensions, regions, movement)
+    - This file defines the concrete behavior layer (states, triggers, components)
+    - Together they form a complete UI reasoning system.
+
+# =========================
+# GLOBAL SUB-LANGUAGE RULES
+# =========================
+sub_language:
+  confirmations:
+    - id: confirm.standard
+      name: Standard Confirmation
+      when:
+        risk_level: medium
+        requires_user_ack: true
+      ui:
+        component: modal
+        semantic_ui:
+          - Modal
+          - Modal.Header
+          - Modal.Content
+          - Modal.Actions
+        actions:
+          primary:
+            label: "Confirm"
+            style: primary
+          secondary:
+            label: "Cancel"
+            style: basic
+      behavior:
+        blocking: true
+        logs_event: true
+
+    - id: confirm.destructive
+      name: Destructive Action Confirmation
+      when:
+        risk_level: high
+        data_loss_possible: true
+      ui:
+        component: modal
+        semantic_ui:
+          - Modal
+          - Modal.Header
+          - Modal.Content
+          - Modal.Actions
+        actions:
+          primary:
+            label: "Delete"
+            style: negative
+          secondary:
+            label: "Cancel"
+            style: basic
+      behavior:
+        blocking: true
+        require_second_step: true
+        logs_event: true
+
+  loaders:
+    - id: loader.inline
+      name: Inline Loader
+      use_when:
+        operation_duration_ms_min: 250
+        scope: component
+      ui:
+        component: loader
+        semantic_ui:
+          - Loader
+        placement: inline
+
+    - id: loader.page_dimmer
+      name: Page Dimmer Loader
+      use_when:
+        operation_duration_ms_min: 750
+        scope: page
+        blocks_interaction: true
+      ui:
+        component: dimmer_loader
+        semantic_ui:
+          - Dimmer
+          - Loader
+
+  progress_indicators:
+    - id: progress.steps
+      name: Step-based Progress
+      use_when:
+        is_multi_step: true
+        steps_min: 2
+      ui:
+        semantic_ui:
+          - Step.Group
+        semantics:
+          show_current_step: true
+          show_remaining: true
+
+    - id: progress.linear
+      name: Linear Progress
+      use_when:
+        has_measurable_completion_ratio: true
+      ui:
+        semantic_ui:
+          - Progress
+
+  feedback_messages:
+    - id: feedback.success.inline
+      type: success
+      ui:
+        semantic_ui:
+          - Message
+        props:
+          positive: true
+          icon: "check"
+      behavior:
+        auto_dismiss_ms: 3000
+
+    - id: feedback.error.inline
+      type: error
+      ui:
+        semantic_ui:
+          - Message
+        props:
+          negative: true
+          icon: "warning circle"
+      behavior:
+        auto_dismiss_ms: null
+        requires_user_ack: true
+
+    - id: feedback.warning.inline
+      type: warning
+      ui:
+        semantic_ui:
+          - Message
+        props:
+          warning: true
+          icon: "exclamation triangle"
+      behavior:
+        auto_dismiss_ms: null
+
+  transitions:
+    - id: transition.modal
+      scope: modal
+      semantic_ui:
+        - Transition
+      defaults:
+        animation: fade
+        duration_ms: 250
+
+    - id: transition.step_change
+      scope: wizard_step
+      semantic_ui:
+        - Transition
+      defaults:
+        animation: "slide left"
+        duration_ms: 300
+
+    - id: transition.page_change
+      scope: page
+      semantic_ui:
+        - Transition
+      defaults:
+        animation: fade
+        duration_ms: 300
+
+    - id: transition.region_move
+      scope: semantic_region
+      semantic_ui:
+        - Transition
+      defaults:
+        animation: "fly left"
+        duration_ms: 400
+      description: "For items moving between semantic regions (Signal → Insight)"
+
+# =========================
+# DOMINANT PATTERN DEFINITIONS
+# =========================
+patterns:
+
+  # -------------------------
+  # AUTHENTICATION → LANDING (ORIGINAL)
+  # -------------------------
+  - id: pattern.auth.login
+    type: dominant
+    name: Authentication → Landing
+    role_in_journey: entry
+    shape_tags: [S, H, P]
+    description: >
+      User signs in, is authenticated, and redirected to the main workspace/dashboard.
+    
+    view_blueprint:
+      route: "/login"
+      layout_regions:
+        - name: shell
+          type: centered
+          semantic_ui:
+            - Container
+            - Grid
+            - Segment
+        - name: form_block
+          semantic_ui:
+            - Form
+            - Form.Field
+            - Input
+            - Button
+            - Message
+            - Loader
+      form_fields:
+        - id: email
+          type: email
+          required: true
+          validation:
+            - rule: email_format
+        - id: password
+          type: password
+          required: true
+          validation:
+            - rule: min_length
+              value: 8
+      api_contract:
+        endpoint: POST /api/auth/login
+        request_schema:
+          email: string
+          password: string
+        response_schema:
+          token: string
+          user: object
+        error_codes:
+          - 401: invalid_credentials
+          - 429: rate_limit_exceeded
+    
+    states:
+      - idle
+      - submitting
+      - success
+      - error
+    
+    triggers:
+      - event: submit_login
+        from_state: idle
+        to_state: submitting
+        effects:
+          loader: loader.page_dimmer
+          call: api.auth.login
+      - event: login_success
+        from_state: submitting
+        to_state: success
+        effects:
+          redirect: /dashboard
+          feedback: feedback.success.inline
+      - event: login_failure
+        from_state: submitting
+        to_state: error
+        effects:
+          feedback: feedback.error.inline
+    
+    requirements:
+      confirmations: []
+      loaders:
+        - loader.page_dimmer
+      progress_indicators: []
+      transitions:
+        - transition.page_change
+
+  # -------------------------
+  # STANDARD FORM (ORIGINAL - ABBREVIATED FOR SPACE)
+  # -------------------------
+  - id: pattern.form.standard
+    type: dominant
+    name: Standard Form Interaction
+    role_in_journey: edit_or_create
+    shape_tags: [S, H, E]
+    description: >
+      Standard form for creating or editing entities with validation.
+    
+    semantic_ui:
+      components:
+        - Form
+        - Form.Field
+        - Input
+        - TextArea
+        - Dropdown
+        - Button
+        - Message
+        - Loader
+    
+    states:
+      - editing
+      - validating
+      - submitting
+      - success
+      - error
+    
+    triggers:
+      - event: submit_form
+        from_state: editing
+        to_state: validating
+        effects: {}
+      - event: validation_passed
+        from_state: validating
+        to_state: submitting
+        effects:
+          loader: loader.inline
+      - event: form_success
+        from_state: submitting
+        to_state: success
+        effects:
+          feedback: feedback.success.inline
+      - event: form_error
+        from_state: submitting
+        to_state: error
+        effects:
+          feedback: feedback.error.inline
+    
+    requirements:
+      confirmations: []
+      loaders:
+        - loader.inline
+      progress_indicators: []
+      transitions: []
+
+  # -------------------------
+  # DASHBOARD (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.dashboard.main
+    type: dominant
+    name: Dashboard / Workspace
+    role_in_journey: primary_hub
+    shape_tags: [S, A, E]
+    description: >
+      Main workspace with cards, metrics, quick actions.
+    
+    semantic_ui:
+      layout:
+        - Grid
+        - Card.Group
+      components:
+        - Card
+        - Statistic
+        - Button
+        - Header
+        - Loader
+    
+    states:
+      - loading
+      - ready
+      - error
+    
+    requirements:
+      confirmations: []
+      loaders:
+        - loader.page_dimmer
+      progress_indicators: []
+      transitions:
+        - transition.page_change
+
+  # -------------------------
+  # MODAL (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.modal.standard
+    type: dominant
+    name: Modal Interaction
+    role_in_journey: contextual_task
+    shape_tags: [S, H, P]
+    description: >
+      Focused task in modal overlay.
+    
+    semantic_ui:
+      components:
+        - Modal
+        - Modal.Header
+        - Modal.Content
+        - Modal.Actions
+        - Button
+    
+    states:
+      - closed
+      - open
+      - submitting
+    
+    requirements:
+      confirmations:
+        - confirm.standard
+      loaders:
+        - loader.inline
+      transitions:
+        - transition.modal
+
+  # -------------------------
+  # WIZARD (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.wizard.multi_step
+    type: dominant
+    name: Multi-step Wizard
+    role_in_journey: guided_process
+    shape_tags: [S, H, P, E]
+    description: >
+      Multi-step process with progress tracking.
+    
+    semantic_ui:
+      components:
+        - Step.Group
+        - Form
+        - Button.Group
+    
+    states:
+      - step_1
+      - step_2
+      - step_n
+      - completed
+    
+    requirements:
+      progress_indicators:
+        - progress.steps
+      transitions:
+        - transition.step_change
+
+  # -------------------------
+  # SEARCH WORKSPACE (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.search.workspace
+    type: dominant
+    name: Search + Filter Workspace
+    role_in_journey: discovery
+    shape_tags: [S, H, P]
+    description: >
+      Search and filter large datasets.
+    
+    semantic_ui:
+      components:
+        - Input
+        - Dropdown
+        - Table
+        - Pagination
+    
+    states:
+      - idle
+      - searching
+      - results
+      - no_results
+
+  # -------------------------
+  # EMPTY STATE (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.empty_state.standard
+    type: dominant
+    name: Empty State / First-time
+    role_in_journey: onboarding
+    shape_tags: [S, A, E]
+    description: >
+      Guidance when no data exists.
+    
+    semantic_ui:
+      components:
+        - Header
+        - Icon
+        - Button
+        - Message
+
+  # -------------------------
+  # BULK ACTIONS (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.bulk.batch_actions
+    type: dominant
+    name: Bulk Selection & Batch Actions
+    role_in_journey: power_user_management
+    shape_tags: [H, P, E]
+    description: >
+      Select multiple items for batch operations.
+    
+    semantic_ui:
+      components:
+        - Checkbox
+        - Button.Group
+        - Dropdown
+
+  # -------------------------
+  # SIDE PANEL (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.inspector.side_panel
+    type: dominant
+    name: Side Panel / Inspector
+    role_in_journey: contextual_details
+    shape_tags: [S, A, E]
+    description: >
+      Contextual details alongside main view.
+    
+    semantic_ui:
+      components:
+        - Sidebar
+        - Segment
+        - Header
+
+  # -------------------------
+  # INLINE EDITING (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.edit.inline
+    type: dominant
+    name: Inline Editing
+    role_in_journey: micro_update
+    shape_tags: [H, E]
+    description: >
+      Edit directly in place.
+    
+    semantic_ui:
+      components:
+        - Input
+        - Icon
+
+  # -------------------------
+  # RESOURCE PICKER (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.picker.resource_modal
+    type: dominant
+    name: Resource Picker Modal
+    role_in_journey: cross_linking
+    shape_tags: [S, P, E]
+    description: >
+      Select and attach related entities.
+    
+    semantic_ui:
+      components:
+        - Modal
+        - Search
+        - List
+        - Button
+
+  # -------------------------
+  # ACTIVITY FEED (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.activity.feed
+    type: dominant
+    name: Activity Feed / Timeline
+    role_in_journey: history_context
+    shape_tags: [S, E]
+    description: >
+      Chronological event feed.
+    
+    semantic_ui:
+      components:
+        - Feed
+        - Comment
+        - Label
+
+  # -------------------------
+  # COMPARISON (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.comparison.split_view
+    type: dominant
+    name: Comparison / Split View
+    role_in_journey: evaluation
+    shape_tags: [S, A, E]
+    description: >
+      Side-by-side entity comparison.
+    
+    semantic_ui:
+      components:
+        - Grid
+        - Segment
+
+  # -------------------------
+  # COMMAND PALETTE (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.command.global_palette
+    type: dominant
+    name: Global Command / Quick Action Surface
+    role_in_journey: power_navigation
+    shape_tags: [H, P, E]
+    description: >
+      Universal command/search surface.
+    
+    semantic_ui:
+      components:
+        - Modal
+        - Input
+        - List
+
+  # -------------------------
+  # LEFT RAIL NAV (ORIGINAL - ABBREVIATED)
+  # -------------------------
+  - id: pattern.nav.left_rail
+    type: dominant
+    name: Left Rail Navigation
+    role_in_journey: global_navigation
+    shape_tags: [S, P, A]
+    description: >
+      Persistent left navigation rail.
+    
+    semantic_ui:
+      components:
+        - Menu
+        - Menu.Item
+        - Icon
+
+  # =========================
+  # NEW PATTERNS START HERE
+  # =========================
+
+  # -------------------------
+  # REASONING TRACE DISPLAY
+  # -------------------------
+  - id: pattern.intelligence.reasoning_trace
+    type: dominant
+    name: Reasoning Trace Display
+    role_in_journey: transparency_and_trust
+    shape_tags: [S, A, E]
+    description: >
+      Shows AI's step-by-step thinking process, making reasoning visible.
+      Essential for trust and explainability. Implements semantic_ui.md
+      principle: "Show how it thinks, not just what it concludes."
+    
+    semantic_ui:
+      layout:
+        - Segment
+        - Step.Group
+      components:
+        - Accordion
+        - Icon
+        - Label
+        - Message
+        - List
+        - Header
+    
+    states:
+      - collapsed
+      - expanded_surface
+      - expanded_deep
+      - expanded_full
+    
+    triggers:
+      - event: expand_trace
+        from_state: collapsed
+        to_state: expanded_surface
+        effects:
+          transition: transition.step_change
+      - event: expand_deeper
+        from_state: expanded_surface
+        to_state: expanded_deep
+        effects:
+          transition: transition.step_change
+      - event: show_full_reasoning
+        from_state: expanded_deep
+        to_state: expanded_full
+        effects: {}
+      - event: collapse_trace
+        from_state: expanded_full
+        to_state: collapsed
+        effects:
+          transition: transition.step_change
+    
+    implementation_contract:
+      frontend:
+        data_structure:
+          reasoning_steps:
+            - id: string
+              depth_level: 1|2|3  # L1=surface, L2=detailed, L3=full
+              thought: string
+              confidence: float
+              sources: array
+              timestamp: string
+        behavior:
+          progressive_disclosure: true
+          depth_levels_visible: [1, 2, 3]
+          show_confidence_per_step: true
+      backend:
+        requirements:
+          - reasoning_trace_data
+          - confidence_scores_per_step
+        api_endpoint: GET /api/intelligence/reasoning/{analysis_id}
+    
+    requirements:
+      confirmations: []
+      loaders:
+        - loader.inline
+      progress_indicators: []
+      transitions:
+        - transition.step_change
+    
+    semantic_ui_integration:
+      dimensions:
+        - reasoning_depth
+        - confidence
+      regions_displayed:
+        - reasoning_pipeline
+      movement_rules:
+        - thought → validated_thought (when confidence > 0.7)
+
+  # -------------------------
+  # CONFIDENCE GRADIENT VISUALIZATION
+  # -------------------------
+  - id: pattern.intelligence.confidence_gradient
+    type: dominant
+    name: Confidence Gradient Visualization
+    role_in_journey: uncertainty_visualization
+    shape_tags: [S, A, E]
+    description: >
+      Visualizes confidence levels across multiple insights simultaneously.
+      Makes uncertainty explicit through visual gradients. Implements
+      semantic_ui.md Rule 4: "Express Uncertainty Visibly."
+    
+    semantic_ui:
+      components:
+        - Card.Group
+        - Card
+        - Progress
+        - Label
+        - Icon
+        - Statistic
+    
+    states:
+      - loading
+      - displaying
+      - filtering_by_confidence
+    
+    triggers:
+      - event: load_insights
+        from_state: loading
+        to_state: displaying
+        effects:
+          loader: loader.inline
+      - event: filter_confidence_threshold
+        from_state: displaying
+        to_state: filtering_by_confidence
+        effects:
+          visual_update: fade_low_confidence_items
+    
+    implementation_contract:
+      frontend:
+        visual_rules:
+          high_confidence:
+            opacity: 1.0
+            border: solid
+            color: green
+          medium_confidence:
+            opacity: 0.7
+            border: solid
+            color: blue
+          low_confidence:
+            opacity: 0.4
+            border: dashed
+            color: orange
+        data_structure:
+          insights:
+            - id: string
+              content: string
+              confidence: float  # 0-1
+              sources: array
+              region: insight_lane | signal_band | uncertainty_zone
+      backend:
+        requirements:
+          - confidence_scoring_engine
+          - multi_insight_batch_endpoint
+        api_endpoint: GET /api/intelligence/insights?min_confidence=X
+    
+    requirements:
+      confirmations: []
+      loaders:
+        - loader.inline
+      progress_indicators: []
+      transitions:
+        - transition.page_change
+    
+    semantic_ui_integration:
+      dimensions:
+        - confidence
+        - signal_vs_insight
+      regions_displayed:
+        - insight_lane
+        - signal_band
+        - uncertainty_zone
+      expression_rules:
+        - gradient_intensity_maps_to_confidence
+        - border_style_indicates_certainty
+
+  # -------------------------
+  # LENS/PERSONA SWITCHER
+  # -------------------------
+  - id: pattern.intelligence.lens_switcher
+    type: dominant
+    name: Lens/Persona Switcher
+    role_in_journey: perspective_control
+    shape_tags: [H, P, A]
+    description: >
+      Toggle between different analytical perspectives (Editor/Architect/Validator).
+      Implements semantic_ui.md Rule 5: "Show Lens/Persona Mode."
+      Critical for Adaptive Persona Synthesis integration.
+    
+    semantic_ui:
+      components:
+        - Button.Group
+        - Button
+        - Icon
+        - Label
+        - Popup
+    
+    states:
+      - editor_lens
+      - architect_lens
+      - validator_lens
+      - transitioning
+    
+    triggers:
+      - event: switch_to_editor
+        from_state: [architect_lens, validator_lens]
+        to_state: transitioning
+        effects:
+          transition: transition.page_change
+          reload_content_for_lens: editor
+      - event: switch_to_architect
+        from_state: [editor_lens, validator_lens]
+        to_state: transitioning
+        effects:
+          transition: transition.page_change
+          reload_content_for_lens: architect
+      - event: switch_to_validator
+        from_state: [editor_lens, architect_lens]
+        to_state: transitioning
+        effects:
+          transition: transition.page_change
+          reload_content_for_lens: validator
+      - event: lens_active
+        from_state: transitioning
+        to_state: [editor_lens, architect_lens, validator_lens]
+        effects: {}
+    
+    implementation_contract:
+      frontend:
+        lens_definitions:
+          editor:
+            icon: "edit"
+            color: blue
+            focus: craft_quality
+            filters_applied: [actionable_items, inline_edits]
+          architect:
+            icon: "sitemap"
+            color: green
+            focus: structure_relationships
+            filters_applied: [hierarchy, dependencies]
+          validator:
+            icon: "check circle"
+            color: orange
+            focus: quality_issues
+            filters_applied: [confidence_scores, gaps]
+        behavior:
+          persist_lens_choice: true
+          animate_transition: true
+          update_all_views: true
+      backend:
+        requirements:
+          - lens_preference_storage
+          - lens_specific_data_filtering
+        api_endpoint: GET /api/intelligence/view?lens={lens_name}
+    
+    requirements:
+      confirmations: []
+      loaders:
+        - loader.inline
+      progress_indicators: []
+      transitions:
+        - transition.page_change
+    
+    semantic_ui_integration:
+      dimensions:
+        - lens_persona_mode
+      regions_affected:
+        - all_regions_reinterpret_through_lens
+      expression_rules:
+        - color_coding_per_lens
+        - icon_system_per_lens
+        - density_adjusts_per_lens
+
+  # -------------------------
+  # SEMANTIC REGION CANVAS
+  # -------------------------
+  - id: pattern.intelligence.semantic_region_canvas
+    type: dominant
+    name: Semantic Region Canvas
+    role_in_journey: semantic_visualization
+    shape_tags: [S, A, E]
+    description: >
+      Displays the semantic map with distinct regions (Insight Lane, Signal Band,
+      Uncertainty Zone). Core visualization of semantic_ui.md Step 2: "Build Semantic Map."
+    
+    semantic_ui:
+      layout:
+        - Grid
+        - Grid.Column
+      components:
+        - Segment
+        - Header
+        - Card.Group
+        - Label
+        - Icon
+        - Message
+    
+    states:
+      - loading
+      - displaying
+      - item_moving
+      - region_focused
+    
+    triggers:
+      - event: load_canvas
+        from_state: loading
+        to_state: displaying
+        effects:
+          loader: loader.page_dimmer
+      - event: item_transitions
+        from_state: displaying
+        to_state: item_moving
+        effects:
+          transition: transition.region_move
+      - event: focus_region
+        from_state: displaying
+        to_state: region_focused
+        effects:
+          visual_emphasis: highlight_region
+    
+    implementation_contract:
+      frontend:
+        region_definitions:
+          insight_lane:
+            position: top
+            color: green
+            entry_threshold: confidence > 0.8
+            badge: "✓ Ready"
+          signal_band:
+            position: middle
+            color: blue
+            entry_threshold: confidence 0.4-0.8
+            badge: "⚡ Processing"
+          uncertainty_zone:
+            position: bottom
+            color: orange
+            entry_threshold: confidence < 0.4
+            badge: "? Uncertain"
+        behavior:
+          drag_drop_between_regions: false  # Automatic based on rules
+          animate_transitions: true
+          show_item_count_per_region: true
+      backend:
+        requirements:
+          - semantic_region_classification_engine
+          - movement_rule_processor
+        api_endpoint: GET /api/intelligence/semantic-map
+        movement_api: POST /api/intelligence/reclassify
+    
+    requirements:
+      confirmations: []
+      loaders:
+        - loader.page_dimmer
+      progress_indicators: []
+      transitions:
+        - transition.region_move
+    
+    semantic_ui_integration:
+      dimensions:
+        - confidence
+        - signal_vs_insight
+      regions_displayed:
+        - insight_lane
+        - signal_band
+        - uncertainty_zone
+      movement_rules:
+        - signal_to_insight_on_validation
+        - insight_to_uncertainty_on_conflict
+
+  # -------------------------
+  # INTELLIGENCE MOVEMENT ANIMATION
+  # -------------------------
+  - id: pattern.intelligence.movement_animation
+    type: dominant
+    name: Intelligence Movement Animation
+    role_in_journey: intelligence_evolution
+    shape_tags: [S, E]
+    description: >
+      Shows items visibly moving between semantic regions as intelligence evolves.
+      Implements semantic_ui.md Rule 6: "Design for Movement."
+    
+    semantic_ui:
+      components:
+        - Transition
+        - Card
+        - Icon
+        - Label
+    
+    states:
+      - static
+      - animating
+      - completed
+    
+    triggers:
+      - event: trigger_movement
+        from_state: static
+        to_state: animating
+        effects:
+          transition: transition.region_move
+          visual_trail: true
+      - event: movement_complete
+        from_state: animating
+        to_state: completed
+        effects:
+          feedback: feedback.success.inline
+    
+    implementation_contract:
+      frontend:
+        animation_config:
+          duration_ms: 400
+          easing: ease-in-out
+          show_path: true
+          particle_effect: optional
+        trigger_conditions:
+          - confidence_threshold_crossed
+          - validation_completed
+          - conflict_resolved
+      backend:
+        requirements:
+          - realtime_classification_updates
+          - websocket_for_live_movement
+        websocket_event: intelligence.item.moved
+    
+    requirements:
+      confirmations: []
+      loaders: []
+      progress_indicators: []
+      transitions:
+        - transition.region_move
+    
+    semantic_ui_integration:
+      dimensions:
+        - confidence
+        - temporal_evolution
+      regions:
+        - from_region
+        - to_region
+      movement_rules:
+        - visualize_all_transitions
+
+  # -------------------------
+  # DEEP ACCORDION
+  # -------------------------
+  - id: pattern.disclosure.accordion_deep
+    type: dominant
+    name: Deep Accordion
+    role_in_journey: depth_navigation
+    shape_tags: [S, H, E]
+    description: >
+      Multi-level expansion for deep hierarchical content. Supports
+      L3/L2/L1 complexity management from CLEAR AI methodology.
+    
+    semantic_ui:
+      components:
+        - Accordion
+        - Accordion.Title
+        - Accordion.Content
+        - Icon
+        - Label
+    
+    states:
+      - all_collapsed
+      - level_1_expanded
+      - level_2_expanded
+      - level_3_expanded
+    
+    triggers:
+      - event: expand_level
+        from_state: any
+        to_state: [level_1_expanded, level_2_expanded, level_3_expanded]
+        effects:
+          transition: transition.step_change
+    
+    implementation_contract:
+      frontend:
+        depth_levels:
+          - L1: stakeholder_facing_summary
+          - L2: technical_details
+          - L3: full_implementation_depth
+        behavior:
+          collapse_siblings: true
+          animate_expansion: true
+          show_depth_indicator: true
+      backend:
+        requirements:
+          - hierarchical_data_structure
+        data_structure:
+          - level: 1|2|3
+            content: string
+            children: array
+    
+    requirements:
+      confirmations: []
+      loaders: []
+      progress_indicators: []
+      transitions:
+        - transition.step_change
+
+  # -------------------------
+  # CONTEXT DRAWER
+  # -------------------------
+  - id: pattern.disclosure.context_drawer
+    type: dominant
+    name: Context Drawer
+    role_in_journey: contextual_depth
+    shape_tags: [S, A, E]
+    description: >
+      Slide-out drawer revealing progressive depth without navigation.
+    
+    semantic_ui:
+      components:
+        - Sidebar
+        - Segment
+        - Header
+        - Button
+        - Icon
+    
+    states:
+      - closed
+      - open_surface
+      - open_deep
+    
+    triggers:
+      - event: open_drawer
+        from_state: closed
+        to_state: open_surface
+        effects:
+          transition: transition.modal
+      - event: load_deeper_context
+        from_state: open_surface
+        to_state: open_deep
+        effects:
+          loader: loader.inline
+    
+    implementation_contract:
+      frontend:
+        behavior:
+          overlay: true
+          width: 500px
+          animation: slide_left
+      backend:
+        api_endpoint: GET /api/context/{entity_id}?depth={1|2|3}
+    
+    requirements:
+      loaders:
+        - loader.inline
+      transitions:
+        - transition.modal
+
+  # -------------------------
+  # LIVE DATA INDICATOR
+  # -------------------------
+  - id: pattern.realtime.live_indicator
+    type: dominant
+    name: Live Data Indicator
+    role_in_journey: temporal_awareness
+    shape_tags: [S, E]
+    description: >
+      Shows real-time data updates, staleness, and freshness indicators.
+    
+    semantic_ui:
+      components:
+        - Label
+        - Icon
+        - Popup
+    
+    states:
+      - live
+      - stale
+      - updating
+      - disconnected
+    
+    triggers:
+      - event: data_update
+        from_state: [live, stale]
+        to_state: updating
+        effects:
+          visual_pulse: true
+      - event: update_complete
+        from_state: updating
+        to_state: live
+        effects: {}
+      - event: connection_lost
+        from_state: live
+        to_state: disconnected
+        effects:
+          feedback: feedback.warning.inline
+    
+    implementation_contract:
+      frontend:
+        visual_states:
+          live:
+            icon: "circle"
+            color: green
+            text: "Live"
+          stale:
+            icon: "circle outline"
+            color: grey
+            text: "Updated 2m ago"
+          updating:
+            icon: "spinner"
+            color: blue
+            text: "Updating..."
+      backend:
+        requirements:
+          - websocket_connection
+          - staleness_detection
+        websocket_event: data.updated
+    
+    requirements:
+      confirmations: []
+      loaders: []
+      progress_indicators: []
+      transitions: []
+
+  # -------------------------
+  # COLLABORATIVE PRESENCE
+  # -------------------------
+  - id: pattern.collaboration.presence
+    type: dominant
+    name: Collaborative Presence
+    role_in_journey: multi_user_awareness
+    shape_tags: [S, A, E]
+    description: >
+      Shows who's currently viewing/editing content.
+    
+    semantic_ui:
+      components:
+        - Label.Group
+        - Label
+        - Avatar
+        - Popup
+    
+    states:
+      - solo
+      - multi_user
+    
+    triggers:
+      - event: user_joined
+        from_state: any
+        to_state: multi_user
+        effects:
+          visual_add_avatar: true
+      - event: user_left
+        from_state: multi_user
+        to_state: [solo, multi_user]
+        effects:
+          visual_remove_avatar: true
+    
+    implementation_contract:
+      frontend:
+        behavior:
+          show_user_avatars: true
+          max_visible: 5
+          overflow_indicator: "+N more"
+      backend:
+        requirements:
+          - presence_tracking_service
+          - websocket_for_join_leave
+        websocket_events:
+          - user.joined
+          - user.left
+    
+    requirements:
+      confirmations: []
+      loaders: []
+      progress_indicators: []
+      transitions: []
+
+  # -------------------------
+  # COMMENTS THREAD
+  # -------------------------
+  - id: pattern.collaboration.comments_thread
+    type: dominant
+    name: Comments Thread
+    role_in_journey: feedback_and_annotation
+    shape_tags: [S, H, E]
+    description: >
+      Inline commenting and threaded discussions on content.
+    
+    semantic_ui:
+      components:
+        - Comment.Group
+        - Comment
+        - Comment.Avatar
+        - Comment.Content
+        - Comment.Author
+        - Comment.Metadata
+        - Comment.Text
+        - Form
+        - Button
+    
+    states:
+      - collapsed
+      - viewing
+      - composing
+      - submitting
+    
+    triggers:
+      - event: expand_comments
+        from_state: collapsed
+        to_state: viewing
+        effects:
+          transition: transition.step_change
+      - event: start_reply
+        from_state: viewing
+        to_state: composing
+        effects: {}
+      - event: submit_comment
+        from_state: composing
+        to_state: submitting
+        effects:
+          loader: loader.inline
+      - event: comment_posted
+        from_state: submitting
+        to_state: viewing
+        effects:
+          feedback: feedback.success.inline
+    
+    implementation_contract:
+      backend:
+        api_endpoint: POST /api/comments
+        data_structure:
+          - parent_id: string|null
+            content: string
+            author_id: string
+    
+    requirements:
+      confirmations: []
+      loaders:
+        - loader.inline
+      transitions:
+        - transition.step_change
+
+  # -------------------------
+  # SEMANTIC GRAPH
+  # -------------------------
+  - id: pattern.viz.semantic_graph
+    type: dominant
+    name: Semantic Graph
+    role_in_journey: relationship_exploration
+    shape_tags: [S, A, E]
+    description: >
+      Network/graph visualization showing entity relationships.
+    
+    semantic_ui:
+      components:
+        - Segment
+        - Header
+        - Button.Group
+        - Loader
+    
+    states:
+      - loading
+      - displaying
+      - node_selected
+      - zoomed
+    
+    triggers:
+      - event: load_graph
+        from_state: loading
+        to_state: displaying
+        effects:
+          loader: loader.page_dimmer
+      - event: select_node
+        from_state: displaying
+        to_state: node_selected
+        effects:
+          highlight_connections: true
+    
+    implementation_contract:
+      frontend:
+        library: d3|cytoscape|vis.js
+        data_structure:
+          nodes:
+            - id: string
+              label: string
+              type: string
+          edges:
+            - from: string
+              to: string
+              relationship: string
+      backend:
+        api_endpoint: GET /api/graph/{context}
+    
+    requirements:
+      loaders:
+        - loader.page_dimmer
+      transitions:
+        - transition.page_change
+
+  # -------------------------
+  # HEATMAP MATRIX
+  # -------------------------
+  - id: pattern.viz.heatmap_matrix
+    type: dominant
+    name: Heatmap Matrix
+    role_in_journey: pattern_recognition
+    shape_tags: [S, A, E]
+    description: >
+      Matrix visualization for multi-dimensional comparison.
+    
+    semantic_ui:
+      components:
+        - Table
+        - Label
+        - Popup
+    
+    states:
+      - loading
+      - displaying
+      - cell_focused
+    
+    implementation_contract:
+      frontend:
+        visual_rules:
+          color_scale: green_to_red
+          show_values: on_hover
+      backend:
+        data_structure:
+          matrix:
+            - row: string
+              col: string
+              value: float
+    
+    requirements:
+      loaders:
+        - loader.inline
+
+  # -------------------------
+  # TIMELINE GANTT
+  # -------------------------
+  - id: pattern.viz.timeline_gantt
+    type: dominant
+    name: Timeline/Gantt View
+    role_in_journey: temporal_planning
+    shape_tags: [S, A, E]
+    description: >
+      Timeline visualization with dependencies and milestones.
+    
+    semantic_ui:
+      components:
+        - Segment
+        - Header
+        - Loader
+    
+    states:
+      - loading
+      - displaying
+      - task_selected
+    
+    implementation_contract:
+      frontend:
+        library: vis-timeline|frappe-gantt
+        data_structure:
+          tasks:
+            - id: string
+              start: date
+              end: date
+              dependencies: array
+      backend:
+        api_endpoint: GET /api/timeline/{project_id}
+    
+    requirements:
+      loaders:
+        - loader.page_dimmer
+
+  # -------------------------
+  # KEYBOARD SHORTCUTS SYSTEM
+  # -------------------------
+  - id: pattern.expert.keyboard_shortcuts
+    type: dominant
+    name: Keyboard Shortcuts System
+    role_in_journey: efficiency
+    shape_tags: [H, P, E]
+    description: >
+      Comprehensive keyboard navigation and command system.
+    
+    semantic_ui:
+      components:
+        - Modal
+        - Table
+        - Label
+    
+    states:
+      - help_closed
+      - help_open
+      - shortcut_active
+    
+    triggers:
+      - event: show_help
+        from_state: help_closed
+        to_state: help_open
+        effects:
+          transition: transition.modal
+    
+    implementation_contract:
+      frontend:
+        shortcuts:
+          - key: "/"
+            action: focus_search
+          - key: "?"
+            action: show_shortcuts_help
+          - key: "cmd+k"
+            action: open_command_palette
+        behavior:
+          global_listeners: true
+          context_aware: true
+    
+    requirements:
+      transitions:
+        - transition.modal
+
+  # -------------------------
+  # ADVANCED FILTER BUILDER
+  # -------------------------
+  - id: pattern.expert.advanced_filters
+    type: dominant
+    name: Advanced Filter Builder
+    role_in_journey: precision_discovery
+    shape_tags: [S, H, P]
+    description: >
+      Complex multi-criteria filtering with boolean logic.
+    
+    semantic_ui:
+      components:
+        - Form
+        - Dropdown
+        - Input
+        - Button.Group
+        - Segment
+    
+    states:
+      - building
+      - applying
+      - results
+    
+    implementation_contract:
+      frontend:
+        filter_structure:
+          - field: string
+            operator: equals|contains|greater_than|less_than
+            value: any
+            logic: AND|OR
+      backend:
+        api_endpoint: POST /api/search/advanced
+    
+    requirements:
+      loaders:
+        - loader.inline
+
+  # -------------------------
+  # BULK FIELD EDITOR
+  # -------------------------
+  - id: pattern.expert.bulk_edit
+    type: dominant
+    name: Bulk Field Editor
+    role_in_journey: mass_management
+    shape_tags: [H, P, E]
+    description: >
+      Edit multiple items simultaneously with field selectors.
+    
+    semantic_ui:
+      components:
+        - Modal
+        - Form
+        - Dropdown
+        - Checkbox
+        - Button
+    
+    states:
+      - selecting_items
+      - selecting_fields
+      - editing
+      - submitting
+    
+    triggers:
+      - event: open_bulk_edit
+        from_state: selecting_items
+        to_state: selecting_fields
+        effects:
+          transition: transition.modal
+      - event: apply_changes
+        from_state: editing
+        to_state: submitting
+        effects:
+          loader: loader.page_dimmer
+          confirmation: confirm.standard
+    
+    requirements:
+      confirmations:
+        - confirm.standard
+      loaders:
+        - loader.page_dimmer
+
+  # -------------------------
+  # PRODUCT TOUR
+  # -------------------------
+  - id: pattern.onboarding.product_tour
+    type: dominant
+    name: Product Tour
+    role_in_journey: education
+    shape_tags: [S, H, P]
+    description: >
+      Guided walkthrough of key features for new users.
+    
+    semantic_ui:
+      components:
+        - Modal
+        - Button
+        - Icon
+        - Step.Group
+    
+    states:
+      - not_started
+      - in_progress
+      - completed
+      - skipped
+    
+    triggers:
+      - event: start_tour
+        from_state: not_started
+        to_state: in_progress
+        effects:
+          transition: transition.modal
+      - event: next_step
+        from_state: in_progress
+        to_state: in_progress
+        effects:
+          transition: transition.step_change
+      - event: complete_tour
+        from_state: in_progress
+        to_state: completed
+        effects:
+          feedback: feedback.success.inline
+    
+    implementation_contract:
+      frontend:
+        tour_steps:
+          - target: css_selector
+            content: string
+            position: top|bottom|left|right
+      backend:
+        requirements:
+          - tour_completion_tracking
+    
+    requirements:
+      progress_indicators:
+        - progress.steps
+      transitions:
+        - transition.modal
+        - transition.step_change
+
+  # -------------------------
+  # CONTEXTUAL HELP
+  # -------------------------
+  - id: pattern.onboarding.contextual_help
+    type: dominant
+    name: Contextual Help
+    role_in_journey: just_in_time_learning
+    shape_tags: [S, E]
+    description: >
+      Inline help tooltips and contextual documentation.
+    
+    semantic_ui:
+      components:
+        - Popup
+        - Icon
+        - Message
+    
+    states:
+      - closed
+      - open
+    
+    triggers:
+      - event: hover_help_icon
+        from_state: closed
+        to_state: open
+        effects:
+          transition: transition.modal
+    
+    implementation_contract:
+      frontend:
+        help_content_source: inline|api
+        behavior:
+          trigger: hover|click
+          auto_close: true
+    
+    requirements:
+      transitions:
+        - transition.modal
+
+  # -------------------------
+  # DIAGNOSTIC PANEL
+  # -------------------------
+  - id: pattern.error.diagnostic_panel
+    type: dominant
+    name: Diagnostic Panel
+    role_in_journey: troubleshooting
+    shape_tags: [S, E]
+    description: >
+      Detailed error explanation with debugging information.
+    
+    semantic_ui:
+      components:
+        - Segment
+        - Message
+        - Accordion
+        - Code
+    
+    states:
+      - collapsed
+      - expanded
+    
+    triggers:
+      - event: show_details
+        from_state: collapsed
+        to_state: expanded
+        effects:
+          transition: transition.step_change
+    
+    implementation_contract:
+      frontend:
+        error_structure:
+          - message: string
+            code: string
+            stack_trace: string
+            context: object
+      backend:
+        requirements:
+          - structured_error_responses
+    
+    requirements:
+      transitions:
+        - transition.step_change
+
+  # -------------------------
+  # UNDO HISTORY
+  # -------------------------
+  - id: pattern.error.undo_history
+    type: dominant
+    name: Undo History
+    role_in_journey: mistake_recovery
+    shape_tags: [H, P, E]
+    description: >
+      Action history with selective undo/redo capabilities.
+    
+    semantic_ui:
+      components:
+        - Modal
+        - List
+        - Button
+        - Icon
+    
+    states:
+      - closed
+      - viewing_history
+      - undoing
+    
+    triggers:
+      - event: open_history
+        from_state: closed
+        to_state: viewing_history
+        effects:
+          transition: transition.modal
+      - event: undo_action
+        from_state: viewing_history
+        to_state: undoing
+        effects:
+          loader: loader.inline
+          confirmation: confirm.standard
+    
+    implementation_contract:
+      frontend:
+        history_structure:
+          - action_id: string
+            action_type: string
+            timestamp: string
+            reversible: boolean
+      backend:
+        api_endpoint: POST /api/undo/{action_id}
+    
+    requirements:
+      confirmations:
+        - confirm.standard
+      loaders:
+        - loader.inline
+      transitions:
+        - transition.modal
+
+  # -------------------------
+  # TABBED SETTINGS
+  # -------------------------
+  - id: pattern.settings.tabbed_preferences
+    type: dominant
+    name: Tabbed Settings
+    role_in_journey: configuration_management
+    shape_tags: [S, H, E]
+    description: >
+      Multi-category settings with tabs and nested sections.
+    
+    semantic_ui:
+      components:
+        - Tab
+        - Form
+        - Button
+        - Header
+    
+    states:
+      - viewing
+      - editing
+      - saving
+    
+    triggers:
+      - event: change_tab
+        from_state: viewing
+        to_state: viewing
+        effects:
+          transition: transition.step_change
+      - event: save_settings
+        from_state: editing
+        to_state: saving
+        effects:
+          loader: loader.inline
+          confirmation: confirm.standard
+    
+    implementation_contract:
+      backend:
+        api_endpoint: PUT /api/settings/{category}
+    
+    requirements:
+      confirmations:
+        - confirm.standard
+      loaders:
+        - loader.inline
+      transitions:
+        - transition.step_change
+
+  # -------------------------
+  # LIVE PREVIEW SETTINGS
+  # -------------------------
+  - id: pattern.settings.preview_live
+    type: dominant
+    name: Live Preview Settings
+    role_in_journey: safe_experimentation
+    shape_tags: [S, A, E]
+    description: >
+      Preview configuration changes before applying permanently.
+    
+    semantic_ui:
+      components:
+        - Grid
+        - Segment
+        - Form
+        - Button
+    
+    states:
+      - editing
+      - previewing
+      - applying
+    
+    triggers:
+      - event: preview_changes
+        from_state: editing
+        to_state: previewing
+        effects:
+          visual_update: show_preview_overlay
+      - event: apply_changes
+        from_state: previewing
+        to_state: applying
+        effects:
+          loader: loader.inline
+          confirmation: confirm.standard
+    
+    implementation_contract:
+      frontend:
+        behavior:
+          live_preview_panel: true
+          revert_on_cancel: true
+    
+    requirements:
+      confirmations:
+        - confirm.standard
+      loaders:
+        - loader.inline
+
+  # -------------------------
+  # EXPORT FORMAT SELECTOR
+  # -------------------------
+  - id: pattern.export.format_selector
+    type: dominant
+    name: Export Format Selector
+    role_in_journey: data_portability
+    shape_tags: [S, H, P]
+    description: >
+      Export data with multiple format options (PDF, CSV, JSON, Excel).
+    
+    semantic_ui:
+      components:
+        - Modal
+        - Dropdown
+        - Checkbox
+        - Button
+    
+    states:
+      - selecting_format
+      - configuring_options
+      - exporting
+      - download_ready
+    
+    triggers:
+      - event: select_format
+        from_state: selecting_format
+        to_state: configuring_options
+        effects: {}
+      - event: start_export
+        from_state: configuring_options
+        to_state: exporting
+        effects:
+          loader: loader.page_dimmer
+          progress: progress.linear
+      - event: export_complete
+        from_state: exporting
+        to_state: download_ready
+        effects:
+          feedback: feedback.success.inline
+    
+    implementation_contract:
+      frontend:
+        supported_formats:
+          - csv
+          - json
+          - xlsx
+          - pdf
+      backend:
+        api_endpoint: POST /api/export
+        response: download_url
+    
+    requirements:
+      loaders:
+        - loader.page_dimmer
+      progress_indicators:
+        - progress.linear
+      transitions:
+        - transition.modal
+
+  # -------------------------
+  # SHARE PERMISSIONS MODAL
+  # -------------------------
+  - id: pattern.sharing.permissions_modal
+    type: dominant
+    name: Share Permissions Modal
+    role_in_journey: access_management
+    shape_tags: [S, H, P]
+    description: >
+      Share content with granular permission controls.
+    
+    semantic_ui:
+      components:
+        - Modal
+        - Form
+        - Input
+        - Dropdown
+        - List
+        - Button
+    
+    states:
+      - selecting_users
+      - setting_permissions
+      - sharing
+      - shared
+    
+    triggers:
+      - event: add_user
+        from_state: selecting_users
+        to_state: setting_permissions
+        effects: {}
+      - event: share
+        from_state: setting_permissions
+        to_state: sharing
+        effects:
+          loader: loader.inline
+      - event: share_complete
+        from_state: sharing
+        to_state: shared
+        effects:
+          feedback: feedback.success.inline
+    
+    implementation_contract:
+      frontend:
+        permission_levels:
+          - view
+          - edit
+          - admin
+      backend:
+        api_endpoint: POST /api/share
+        data_structure:
+          - user_id: string
+            permission: view|edit|admin
+    
+    requirements:
+      loaders:
+        - loader.inline
+      transitions:
+        - transition.modal
+
+  # -------------------------
+  # BOTTOM SHEET (MOBILE)
+  # -------------------------
+  - id: pattern.mobile.bottom_sheet
+    type: dominant
+    name: Bottom Sheet (Mobile)
+    role_in_journey: mobile_actions
+    shape_tags: [S, H, P]
+    description: >
+      Mobile-optimized contextual menu sliding from bottom.
+    
+    semantic_ui:
+      components:
+        - Modal  # Adapts for mobile
+        - List
+        - Button
+        - Icon
+    
+    states:
+      - closed
+      - open
+    
+    triggers:
+      - event: open_sheet
+        from_state: closed
+        to_state: open
+        effects:
+          transition: transition.modal
+          animation: slide_up
+    
+    implementation_contract:
+      frontend:
+        mobile_only: true
+        behavior:
+          slide_from: bottom
+          backdrop_dismissable: true
+    
+    requirements:
+      transitions:
+        - transition.modal
+
+  # -------------------------
+  # SWIPE ACTIONS (MOBILE)
+  # -------------------------
+  - id: pattern.mobile.swipe_actions
+    type: dominant
+    name: Swipe Actions (Mobile)
+    role_in_journey: mobile_efficiency
+    shape_tags: [H, E]
+    description: >
+      Swipe gestures on list items for quick actions.
+    
+    semantic_ui:
+      components:
+        - List
+        - List.Item
+        - Button
+        - Icon
+    
+    states:
+      - neutral
+      - swiped_left
+      - swiped_right
+    
+    triggers:
+      - event: swipe_left
+        from_state: neutral
+        to_state: swiped_left
+        effects:
+          reveal_actions: [delete, archive]
+      - event: swipe_right
+        from_state: neutral
+        to_state: swiped_right
+        effects:
+          reveal_actions: [mark_done]
+    
+    implementation_contract:
+      frontend:
+        mobile_only: true
+        gesture_threshold: 50px
+        actions_configurable: true
+    
+    requirements:
+      confirmations:
+        - confirm.destructive  # If delete action
+
+# =========================
+# SEMANTIC OVERLAYS (EXPANDED)
+# =========================
+semantic_overlays:
+  - dimension: confidence
+    description: >
+      When confidence levels apply to a pattern, these visual rules govern expression.
+    affects_patterns:
+      - pattern.form.standard
+      - pattern.modal.standard
+      - pattern.search.workspace
+      - pattern.intelligence.confidence_gradient
+      - pattern.intelligence.reasoning_trace
+      - pattern.intelligence.semantic_region_canvas
+    expression_rules:
+      low:
+        border: dashed
+        opacity: 0.4
+        icon: "question circle outline"
+        color: orange
+      medium:
+        border: solid
+        opacity: 0.7
+        icon: "info circle"
+        color: blue
+      high:
+        border: solid
+        opacity: 1.0
+        icon: "check circle"
+        color: green
+
+  - dimension: uncertainty_zone
+    description: >
+      When elements exist in the Uncertainty Zone (from semantic_ui.md), apply these rules.
+    affects_patterns:
+      - pattern.form.standard
+      - pattern.comparison.split_view
+      - pattern.intelligence.semantic_region_canvas
+    expression_rules:
+      background: "rgba(255, 200, 100, 0.1)"
+      border_style: "dashed"
+      show_conflict_indicator: true
+
+  - dimension: lens_persona
+    description: >
+      Patterns adapt based on active lens/persona mode.
+    affects_patterns:
+      - pattern.intelligence.lens_switcher
+      - pattern.intelligence.semantic_region_canvas
+      - pattern.dashboard.main
+    pattern_overrides_by_lens:
+      editor:
+        reorganize_regions: true
+        highlight_actionability: true
+        show_inline_editing: true
+        color_accent: blue
+      architect:
+        show_structure_layers: true
+        enable_region_collapse: true
+        focus_on_relationships: true
+        color_accent: green
+      validator:
+        show_confidence: true
+        enable_quality_markers: true
+        highlight_issues: true
+        color_accent: orange
+
+  - dimension: reasoning_depth
+    description: >
+      Patterns that express reasoning depth (L1/L2/L3).
+    affects_patterns:
+      - pattern.intelligence.reasoning_trace
+      - pattern.disclosure.accordion_deep
+    expression_rules:
+      L1_surface:
+        indent: 0
+        font_weight: bold
+        icon: "circle"
+      L2_detailed:
+        indent: 20px
+        font_weight: normal
+        icon: "circle outline"
+      L3_full:
+        indent: 40px
+        font_weight: light
+        icon: "dot circle outline"
+
+  - dimension: temporal_freshness
+    description: >
+      Visual indicators for data staleness and real-time status.
+    affects_patterns:
+      - pattern.realtime.live_indicator
+      - pattern.activity.feed
+    expression_rules:
+      live:
+        pulse_animation: true
+        color: green
+        icon: "circle"
+      recent:
+        color: blue
+        icon: "clock outline"
+      stale:
+        color: grey
+        icon: "exclamation circle"
+
+  - dimension: collaboration_status
+    description: >
+      Visual indicators for multi-user collaboration.
+    affects_patterns:
+      - pattern.collaboration.presence
+      - pattern.collaboration.comments_thread
+    expression_rules:
+      active_users:
+        show_avatars: true
+        max_visible: 5
+        overflow_style: "+N more"
+      editing_conflict:
+        highlight_color: yellow
+        show_warning: true

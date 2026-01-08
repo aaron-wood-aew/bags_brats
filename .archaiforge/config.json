@@ -1,5 +1,5 @@
 {
-  "archaiforge_version": "3.0.0-beta",
+  "archaiforge_version": "6.0.0-beta",
   "project": {
     "name": "bags_brats"
   },
@@ -7,5 +7,18 @@
     "mode": "antigravity_companion"
   },
   "initialized": "2025-12-30T20:26:09.964Z",
-  "context_path": "/Users/Aaron/projects/archaiforge/context"
+  "context_path": "/Users/Aaron/projects/archaiforge/context",
+  "last_updated": "2026-01-07T21:13:18.987Z",
+  "update_history": [
+    {
+      "from_version": "3.0.0-beta",
+      "to_version": "5.0.0-beta",
+      "updated_at": "2026-01-04T13:16:26.193Z"
+    },
+    {
+      "from_version": "5.0.0-beta",
+      "to_version": "6.0.0-beta",
+      "updated_at": "2026-01-07T21:13:18.987Z"
+    }
+  ]
 }

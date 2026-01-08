@@ -8,6 +8,10 @@ class Config:
     MONGO_URI = os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/bags_brats'
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'super-secret'
     
+    # JWT token expires in 8 hours (for tournament-day sessions)
+    from datetime import timedelta
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)
+    
     # Mail Config (Future scope)
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 587)

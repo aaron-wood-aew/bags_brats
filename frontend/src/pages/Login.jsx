@@ -14,11 +14,15 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            console.log('Attempting login to:', `${API_URL}/auth/login`);
             const res = await axios.post(`${API_URL}/auth/login`, { email, password });
+            console.log('Login success:', res.data);
             localStorage.setItem('token', res.data.access_token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             navigate('/dashboard');
         } catch (err) {
+            console.error('Login error:', err);
+            console.error('Error response:', err.response);
             setError(err.response?.data?.error || 'Login failed');
         }
     };

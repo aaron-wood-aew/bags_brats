@@ -263,6 +263,7 @@ def get_standings():
 @bp.route('/admin/generate-pairings', methods=['POST'])
 @jwt_required()
 def generate_pairings_route():
+    """Generate pairings for the current/next round."""
     current_user_id = get_jwt_identity()
     current_user = User.find_by_id(mongo, current_user_id)
     if not current_user or current_user.role != 'admin':
@@ -271,18 +272,188 @@ def generate_pairings_route():
     tournament = Tournament.find_active(mongo)
     if not tournament:
         return jsonify({"error": "No active tournament"}), 400
-        
-    from app.utils import generate_daily_pairings
-    pairings = generate_daily_pairings(mongo, str(tournament._id))
     
-    if "error" in pairings:
+    data = request.json or {}
+    day_index = data.get('day_index', tournament.current_day_index)
+    round_number = data.get('round_number', tournament.current_round + 1)
+    
+    from app.utils import generate_round_pairings
+    pairings = generate_round_pairings(mongo, str(tournament._id), day_index, round_number)
+    
+    if isinstance(pairings, dict) and "error" in pairings:
         return jsonify(pairings), 400
+    
+    # Update tournament's current round
+    tournament.current_round = round_number
+    tournament.save(mongo)
     
     # Broadcast to all players in this tournament
     from app.events import broadcast_pairings
     broadcast_pairings(str(tournament._id), pairings)
         
-    return jsonify({"msg": "Pairings generated and revealed", "pairings": pairings}), 201
+    return jsonify({
+        "msg": f"Round {round_number} pairings generated",
+        "round": round_number,
+        "day": day_index + 1,
+        "games_count": len(pairings),
+        "pairings": pairings
+    }), 201
+
+
+@bp.route('/admin/round/start', methods=['POST'])
+@jwt_required()
+def start_round():
+    """Start all upcoming games for the current round."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+        
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"error": "No active tournament"}), 400
+    
+    data = request.json or {}
+    day_index = data.get('day_index', tournament.current_day_index)
+    round_number = data.get('round_number', tournament.current_round)
+    
+    if round_number == 0:
+        return jsonify({"error": "No round has been generated yet. Generate pairings first."}), 400
+    
+    # Find upcoming games for this round
+    games = list(mongo.db.games.find({
+        "tournament_id": str(tournament._id),
+        "day_index": day_index,
+        "round_number": round_number,
+        "status": "upcoming"
+    }))
+    
+    if len(games) == 0:
+        return jsonify({"error": f"No upcoming games found for Round {round_number}"}), 400
+    
+    now = datetime.utcnow()
+    start_time = now.strftime('%Y-%m-%dT%H:%M:%SZ')
+    end_time = (now + timedelta(minutes=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    
+    for g in games:
+        mongo.db.games.update_one(
+            {"_id": g["_id"]},
+            {"$set": {
+                "status": "active",
+                "start_time": start_time,
+                "end_time": end_time
+            }}
+        )
+    
+    try:
+        from app.events import broadcast_standings_update
+        broadcast_standings_update(str(tournament._id))
+    except Exception as e:
+        print(f"Start round broadcast failed: {e}")
+    
+    return jsonify({
+        "msg": f"Round {round_number} started",
+        "games_started": len(games),
+        "end_time": end_time
+    }), 200
+
+
+@bp.route('/admin/round/stop', methods=['POST'])
+@jwt_required()
+def stop_round():
+    """Finalize all active games for the current round."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+        
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"error": "No active tournament"}), 400
+    
+    data = request.json or {}
+    day_index = data.get('day_index', tournament.current_day_index)
+    round_number = data.get('round_number', tournament.current_round)
+    
+    # Find active games for this round
+    games = list(mongo.db.games.find({
+        "tournament_id": str(tournament._id),
+        "day_index": day_index,
+        "round_number": round_number,
+        "status": "active"
+    }))
+    
+    for g in games:
+        mongo.db.games.update_one(
+            {"_id": g["_id"]},
+            {"$set": {
+                "status": "finalized",
+                "end_time": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            }}
+        )
+    
+    try:
+        from app.events import broadcast_standings_update
+        broadcast_standings_update(str(tournament._id))
+    except Exception as e:
+        print(f"Stop round broadcast failed: {e}")
+    
+    return jsonify({
+        "msg": f"Round {round_number} finalized",
+        "games_finalized": len(games)
+    }), 200
+
+
+@bp.route('/admin/round/status', methods=['GET'])
+@jwt_required()
+def get_round_status():
+    """Get status of all rounds for current day."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+    
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"error": "No active tournament"}), 400
+    
+    day_index = request.args.get('day_index', tournament.current_day_index, type=int)
+    
+    rounds = []
+    for r in range(1, tournament.rounds_per_day + 1):
+        games = list(mongo.db.games.find({
+            "tournament_id": str(tournament._id),
+            "day_index": day_index,
+            "round_number": r
+        }))
+        
+        if len(games) == 0:
+            status = "pending"
+        elif all(g['status'] == 'finalized' for g in games):
+            status = "complete"
+        elif any(g['status'] == 'active' for g in games):
+            status = "active"
+        else:
+            status = "ready"  # Pairings generated but not started
+        
+        rounds.append({
+            "round_number": r,
+            "status": status,
+            "total_games": len(games),
+            "finalized_games": sum(1 for g in games if g['status'] == 'finalized'),
+            "active_games": sum(1 for g in games if g['status'] == 'active')
+        })
+    
+    return jsonify({
+        "tournament_id": str(tournament._id),
+        "day_index": day_index,
+        "day_number": day_index + 1,
+        "current_round": tournament.current_round,
+        "rounds_per_day": tournament.rounds_per_day,
+        "rounds": rounds
+    }), 200
+
+
 
 @bp.route('/games/<game_id>/start', methods=['POST'])
 @jwt_required()
@@ -355,6 +526,45 @@ def start_all_games():
             
     return jsonify({"msg": f"Started {count} games", "end_time": end_time}), 200
 
+@bp.route('/admin/tournament/stop-all', methods=['POST'])
+@jwt_required()
+def stop_all_games():
+    """Finalize all active games in the current tournament."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+        
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"error": "No active tournament"}), 400
+        
+    # Find all active games for this tournament
+    games = list(mongo.db.games.find({
+        "tournament_id": str(tournament._id),
+        "status": "active"
+    }))
+    
+    count = 0
+    for g in games:
+        mongo.db.games.update_one(
+            {"_id": g["_id"]},
+            {"$set": {
+                "status": "finalized",
+                "end_time": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            }}
+        )
+        count += 1
+        
+    if count > 0:
+        try:
+            from app.events import broadcast_standings_update
+            broadcast_standings_update(str(tournament._id))
+        except Exception as e:
+            print(f"Stop all broadcast failed: {e}")
+            
+    return jsonify({"msg": f"Finalized {count} games"}), 200
+
 
 @bp.route('/admin/tournament/blackout', methods=['POST'])
 @jwt_required()
@@ -405,6 +615,37 @@ def update_user_role(user_id):
         
     mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"role": role}})
     return jsonify({"msg": "User role updated"}), 200
+
+@bp.route('/admin/users/<user_id>', methods=['PUT'])
+@jwt_required()
+def update_user(user_id):
+    """Update player details including name, phone, and Power Player status."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+    
+    user = User.find_by_id(mongo, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    data = request.json
+    update_fields = {}
+    
+    # Allowed editable fields
+    if 'name' in data:
+        update_fields['name'] = data['name']
+    if 'phone' in data:
+        update_fields['phone'] = data['phone']
+    if 'is_power_player' in data:
+        update_fields['is_power_player'] = bool(data['is_power_player'])
+    if 'power_player_used' in data:
+        update_fields['power_player_used'] = bool(data['power_player_used'])
+    
+    if update_fields:
+        mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": update_fields})
+    
+    return jsonify({"msg": "User updated successfully", "updated_fields": list(update_fields.keys())}), 200
 
 @bp.route('/admin/users/<user_id>', methods=['DELETE'])
 @jwt_required()
@@ -503,17 +744,57 @@ def seed_players_ui():
         return jsonify({"error": "Admin access required"}), 403
     
     import string
+    from werkzeug.security import generate_password_hash
+    
+    # Realistic names for A-X
+    SEED_NAMES = {
+        'a': 'Alice Anderson', 'b': 'Bob Baker', 'c': 'Carol Carter',
+        'd': 'David Davis', 'e': 'Emma Edwards', 'f': 'Frank Foster',
+        'g': 'Grace Garcia', 'h': 'Henry Harris', 'i': 'Iris Ingram',
+        'j': 'Jack Johnson', 'k': 'Karen King', 'l': 'Leo Lewis',
+        'm': 'Maria Martinez', 'n': 'Noah Nelson', 'o': 'Olivia Owens',
+        'p': 'Paul Parker', 'q': 'Quinn Quigley', 'r': 'Rachel Roberts',
+        's': 'Sam Smith', 't': 'Tina Taylor', 'u': 'Uma Underwood',
+        'v': 'Victor Valdez', 'w': 'Wendy Wilson', 'x': 'Xavier Xu'
+    }
+    POWER_PLAYERS = ['e', 'j', 'o', 't']
+    
     letters = string.ascii_lowercase[:24]
-    count = 0
+    created = 0
+    updated = 0
+    
     for char in letters:
         email = f"{char}@{char}.com"
-        if not mongo.db.users.find_one({"email": email}):
-            user = User({"name": char, "email": email, "phone": "1231231234", "role": "player"})
+        is_power = char in POWER_PLAYERS
+        
+        existing = mongo.db.users.find_one({"email": email})
+        if existing:
+            # Update existing player with full name and power player status
+            mongo.db.users.update_one(
+                {"email": email},
+                {"$set": {
+                    "name": SEED_NAMES[char],
+                    "is_power_player": is_power,
+                    "power_player_used": False
+                }}
+            )
+            updated += 1
+        else:
+            # Create new player
+            user = User({
+                "name": SEED_NAMES[char],
+                "email": email,
+                "phone": "1231231234",
+                "role": "player",
+                "is_power_player": is_power,
+                "power_player_used": False
+            })
             user.set_password(char)
             user.save(mongo)
-            count += 1
-            
-    return jsonify({"msg": f"Seeded {count} players."}), 201
+            created += 1
+    
+    power_names = ', '.join([SEED_NAMES[c] for c in POWER_PLAYERS])
+    return jsonify({"msg": f"Created {created}, updated {updated} players. ⚡ Power Players: {power_names}"}), 201
 
 @bp.route('/admin/users/<user_id>/check-in', methods=['POST'])
 @jwt_required()

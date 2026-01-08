@@ -1,0 +1,40 @@
+boundaries:
+  subsystems: {}
+  cross_cutting: {}
+  persona_synthesis:
+    enabled: true
+    active_domains: ["technical", "creative", "research"]
+    custom_personas: {}
+    _comment: "Adaptive persona synthesis ENABLED by default for phase-specific AI collaboration. See extensions/adaptive_personas.md"
+
+preferences:
+  frontend:
+    framework: "React"
+    language: "TypeScript"
+    styling: "Tailwind CSS"
+    build_tool: "Vite"
+    state_management: "Zustand"
+    routing: "React Router"
+  backend:
+    runtime: "Node.js"
+    framework: "Express"
+    language: "TypeScript"
+    orm: "Prisma"
+    validation: "Zod"
+  database:
+    primary: "PostgreSQL"
+    cache: "Redis"
+    search: null
+  api:
+    style: "REST"
+    documentation: "OpenAPI/Swagger"
+    auth: "JWT"
+  testing:
+    unit: "Vitest"
+    integration: "Playwright"
+    e2e: "Playwright"
+  infrastructure:
+    containerization: "Docker"
+    orchestration: null
+    ci_cd: "GitHub Actions"
+    hosting: "Vercel"

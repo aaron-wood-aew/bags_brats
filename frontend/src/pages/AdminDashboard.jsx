@@ -6,6 +6,7 @@ import AdminProxyRegister from '../components/AdminProxyRegister';
 import AdminUserManagement from '../components/AdminUserManagement';
 import AdminGameManagement from '../components/AdminGameManagement';
 import TournamentStandings from '../components/TournamentStandings';
+import RoundManager from '../components/RoundManager';
 import ThemeToggle from '../components/ThemeToggle';
 import API_URL from '../config';
 
@@ -14,6 +15,7 @@ const AdminDashboard = () => {
     const [activeTournament, setActiveTournament] = useState(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [tournamentName, setTournamentName] = useState('');
+    const [roundsPerDay, setRoundsPerDay] = useState(3);
     const [selectedDates, setSelectedDates] = useState([]); // Array of YYYY-MM-DD
     const [viewDate, setViewDate] = useState(new Date()); // Controls which month we see
     const navigate = useNavigate();
@@ -41,13 +43,15 @@ const AdminDashboard = () => {
             const token = localStorage.getItem('token');
             await axios.post(`${API_URL}/tournaments`, {
                 name: tournamentName,
-                dates: selectedDates.sort()
+                dates: selectedDates.sort(),
+                rounds_per_day: roundsPerDay
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
             setShowCreateForm(false);
             setTournamentName('');
+            setRoundsPerDay(3);
             setSelectedDates([]);
             fetchActiveTournament();
         } catch (err) {
@@ -102,6 +106,19 @@ const AdminDashboard = () => {
             alert("Gameday pulse activated! All games started.");
         } catch (err) {
             alert(err.response?.data?.error || "Failed to start all games");
+        }
+    };
+
+    const handleStopAllGames = async () => {
+        if (!window.confirm("This will FINALIZE all active games with their current scores. Proceed?")) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(`${API_URL}/admin/tournament/stop-all`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert(res.data.msg || "All games finalized!");
+        } catch (err) {
+            alert(err.response?.data?.error || "Failed to stop games");
         }
     };
 
@@ -210,6 +227,26 @@ const AdminDashboard = () => {
                                             required
                                         />
 
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <label style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Rounds per day:</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="10"
+                                                value={roundsPerDay}
+                                                onChange={(e) => setRoundsPerDay(parseInt(e.target.value) || 3)}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.05)',
+                                                    border: '1px solid var(--border)',
+                                                    color: 'white',
+                                                    padding: '10px',
+                                                    borderRadius: '8px',
+                                                    width: '70px',
+                                                    textAlign: 'center'
+                                                }}
+                                            />
+                                        </div>
+
                                         <div style={{ marginBottom: '8px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                                                 <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Select Tournament Days:</p>
@@ -306,30 +343,27 @@ const AdminDashboard = () => {
                                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{activeTournament.dates.length} Days • Day {activeTournament.current_day_index + 1}</div>
                                     </div>
 
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button
-                                            onClick={handleGeneratePairings}
-                                            className="btn-primary"
-                                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--brand-teal)' }}
-                                        >
-                                            <Activity size={18} />
-                                            Pairings
-                                        </button>
-                                        <button
-                                            onClick={handleStartAllGames}
-                                            className="btn-primary"
-                                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--brand-teal-glow)', border: '1px solid var(--brand-teal)', color: 'white' }}
-                                        >
-                                            <Plus size={18} />
-                                            Start All
-                                        </button>
+                                    {/* Round Manager */}
+                                    <RoundManager tournament={activeTournament} onUpdate={fetchActiveTournament} />
+
+                                    {/* End Tournament Button */}
+                                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
                                         <button
                                             onClick={handleClearTournament}
                                             className="btn-primary"
-                                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#ef4444' }}
+                                            style={{
+                                                width: '100%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                                background: 'rgba(239, 68, 68, 0.1)',
+                                                border: '1px solid #ef4444',
+                                                color: '#ef4444'
+                                            }}
                                         >
                                             <X size={18} />
-                                            End
+                                            End Tournament
                                         </button>
                                     </div>
                                 </div>
