@@ -9,21 +9,22 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setError('');
         try {
-            console.log('Attempting login to:', `${API_URL}/auth/login`);
             const res = await axios.post(`${API_URL}/auth/login`, { email, password });
-            console.log('Login success:', res.data);
             localStorage.setItem('token', res.data.access_token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             navigate('/dashboard');
         } catch (err) {
-            console.error('Login error:', err);
-            console.error('Error response:', err.response);
             setError(err.response?.data?.error || 'Login failed');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -73,9 +74,22 @@ const Login = () => {
 
                     {error && <p style={{ color: '#ef4444', marginBottom: '16px', fontSize: '14px', textAlign: 'center' }}>{error}</p>}
 
-                    <button type="submit" className="btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <button
+                        type="submit"
+                        className="btn-primary"
+                        disabled={loading}
+                        style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            opacity: loading ? 0.7 : 1,
+                            cursor: loading ? 'wait' : 'pointer'
+                        }}
+                    >
                         <LogIn size={20} />
-                        Sign In
+                        {loading ? 'Signing In...' : 'Sign In'}
                     </button>
                 </form>
 

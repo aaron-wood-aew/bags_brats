@@ -154,12 +154,30 @@ def submit_score(game_id):
     current_user_id = get_jwt_identity()
     data = request.json
     
-    score1 = data.get('score1', 0)
-    score2 = data.get('score2', 0)
+    # Input validation
+    try:
+        score1 = int(data.get('score1', 0))
+        score2 = int(data.get('score2', 0))
+    except (ValueError, TypeError):
+        return jsonify({"error": "Scores must be valid numbers"}), 400
+    
+    if score1 < 0 or score2 < 0:
+        return jsonify({"error": "Scores cannot be negative"}), 400
+    
+    if score1 > 50 or score2 > 50:
+        return jsonify({"error": "Scores cannot exceed 50"}), 400
     
     game_data = mongo.db.games.find_one({"_id": ObjectId(game_id)})
     if not game_data:
         return jsonify({"error": "Game not found"}), 404
+    
+    # Check if user is a participant in this game
+    all_players = game_data.get('team1_player_ids', []) + game_data.get('team2_player_ids', [])
+    if current_user_id not in all_players:
+        # Check if user is admin
+        current_user = User.find_by_id(mongo, current_user_id)
+        if not current_user or current_user.role != 'admin':
+            return jsonify({"error": "You are not a participant in this game"}), 403
         
     if game_data.get('status') == 'finalized':
         return jsonify({"error": "Game already finalized"}), 400

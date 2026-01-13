@@ -1,0 +1,11 @@
+# Archaiforge State Configuration
+
+paths:
+  ledger: context/ledger.json
+  cpt: context/cpt.md
+  boundaries: context/boundaries.yaml
+  kernel: context/kernel.md
+  extensions: extensions/
+  knowledge: extensions/knowledge/
+  workflows: context/workflows/
+  reflex: reflex/

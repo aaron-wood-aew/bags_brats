@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import PlayerDashboard from './pages/PlayerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import SpectatorView from './pages/SpectatorView';
+import PrivateRoute from './components/PrivateRoute';
 
 const App = () => {
   return (
@@ -13,8 +14,22 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<PlayerDashboard />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <PlayerDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute requireAdmin>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
           <Route path="/spectator" element={<SpectatorView />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>

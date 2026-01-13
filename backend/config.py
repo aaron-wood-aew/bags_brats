@@ -4,9 +4,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
-    MONGO_URI = os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/bags_brats'
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'super-secret'
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    MONGO_URI = os.environ.get('MONGO_URI')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+    
+    # Validate required secrets at startup
+    @classmethod
+    def validate(cls):
+        missing = []
+        if not cls.SECRET_KEY:
+            missing.append('SECRET_KEY')
+        if not cls.MONGO_URI:
+            missing.append('MONGO_URI')
+        if not cls.JWT_SECRET_KEY:
+            missing.append('JWT_SECRET_KEY')
+        if missing:
+            raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
     
     # JWT token expires in 8 hours (for tournament-day sessions)
     from datetime import timedelta
