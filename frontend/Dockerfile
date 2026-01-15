@@ -1,14 +1,26 @@
-FROM node:20-alpine
+# Build stage
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
+RUN npm run build
 
-# Expose Vite dev port
+# Production stage
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install serve for static file hosting
+RUN npm install -g serve
+
+# Copy built assets from builder
+COPY --from=builder /app/dist ./dist
+
 EXPOSE 5173
 
-# Run in dev mode for parity with local experience and hot-reloading if volumes are used
-CMD ["npm", "run", "dev"]
+# Serve the built static files
+CMD ["serve", "-s", "dist", "-l", "5173"]
