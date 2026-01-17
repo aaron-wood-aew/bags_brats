@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import PlayerDashboard from './pages/PlayerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import SpectatorView from './pages/SpectatorView';
+import OAuthCallback from './pages/OAuthCallback';
 import PrivateRoute from './components/PrivateRoute';
 
 const App = () => {
@@ -14,6 +15,7 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route
             path="/dashboard"
             element={
@@ -39,3 +41,4 @@ const App = () => {
 };
 
 export default App;
+

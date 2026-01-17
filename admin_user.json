@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Admin User",
+        "email": "admin@bagsbrats.com",
+        "password_hash": "$2b$12$u44jUSJ9W20kTNQZ9D20gumDEwZGs/Efloin48N2XQxeRogE7VDry",
+        "role": "admin",
+        "is_proxy": false,
+        "is_power_player": false,
+        "power_player_used": false,
+        "checked_in": false
+    }
+]

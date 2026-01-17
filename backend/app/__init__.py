@@ -33,6 +33,9 @@ def create_app(config_class=Config):
 
     from app.routes import bp as main_bp
     app.register_blueprint(main_bp)
+    
+    from app.auth_oauth import oauth_bp
+    app.register_blueprint(oauth_bp)
 
     # Import events to register them with socketio
     from app import events

@@ -49,6 +49,11 @@ class User(BaseModel):
         data = mongo.db.users.find_one({"_id": ObjectId(user_id)})
         return cls(data) if data else None
 
+    @classmethod
+    def find_by_google_id(cls, mongo, google_id):
+        data = mongo.db.users.find_one({"google_id": google_id})
+        return cls(data) if data else None
+
     def save(self, mongo):
         data = self.to_dict()
         if data.get('_id'):
