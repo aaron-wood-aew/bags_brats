@@ -90,6 +90,69 @@ def get_current_game():
     
     return jsonify(game_obj), 200
 
+@bp.route('/player/day-summary', methods=['GET'])
+@jwt_required()
+def get_day_summary():
+    """Get player's session state and completed games for the day."""
+    user_id = get_jwt_identity()
+    tournament = Tournament.find_active(mongo)
+    
+    if not tournament:
+        return jsonify({"state": "no_tournament", "games": [], "rounds_total": 0, "rounds_completed": 0}), 200
+    
+    day_index = tournament.current_day_index
+    rounds_total = tournament.rounds_per_day
+    
+    # Get all player's games for today
+    player_games = list(mongo.db.games.find({
+        "tournament_id": str(tournament._id),
+        "day_index": day_index,
+        "$or": [
+            {"team1_player_ids": user_id},
+            {"team2_player_ids": user_id}
+        ]
+    }).sort("round_number", 1))
+    
+    # Count completed rounds
+    rounds_with_games = set(g.get('round_number') for g in player_games)
+    finalized_rounds = set(g.get('round_number') for g in player_games if g.get('status') == 'finalized')
+    
+    # Determine state
+    active_game = next((g for g in player_games if g.get('status') in ['upcoming', 'active']), None)
+    
+    if active_game:
+        state = "active"
+    elif len(finalized_rounds) >= rounds_total:
+        state = "day_complete"
+    elif len(finalized_rounds) > 0:
+        state = "between_rounds"
+    else:
+        state = "waiting"
+    
+    # Build game summaries (for completed games only, to show between rounds)
+    game_summaries = []
+    for g in player_games:
+        if g.get('status') == 'finalized':
+            is_team1 = user_id in g.get('team1_player_ids', [])
+            my_score = g.get('score1') if is_team1 else g.get('score2')
+            opp_score = g.get('score2') if is_team1 else g.get('score1')
+            won = my_score > opp_score if my_score is not None and opp_score is not None else None
+            
+            game_summaries.append({
+                "round": g.get('round_number'),
+                "my_score": my_score,
+                "opponent_score": opp_score,
+                "won": won
+            })
+    
+    return jsonify({
+        "state": state,
+        "games": game_summaries,
+        "rounds_total": rounds_total,
+        "rounds_completed": len(finalized_rounds),
+        "current_round": max(rounds_with_games) if rounds_with_games else 0
+    }), 200
+
 @bp.route('/auth/me', methods=['GET'])
 @jwt_required()
 def get_me():
@@ -656,6 +719,61 @@ def toggle_blackout():
     broadcast_blackout(str(tournament._id), is_blackout)
     
     return jsonify({"msg": "Blackout status updated", "blackout": is_blackout}), 200
+
+@bp.route('/admin/tournament/top-teams', methods=['GET'])
+@jwt_required()
+def get_top_teams():
+    """Get top 3 teams for the current tournament day (for Big Reveal)."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+    
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"error": "No active tournament"}), 400
+    
+    day_index = tournament.current_day_index
+    
+    # Get all finalized games for today
+    games = list(mongo.db.games.find({
+        "tournament_id": str(tournament._id),
+        "day_index": day_index,
+        "status": "finalized"
+    }))
+    
+    # Calculate team scores (sum of points across all games)
+    team_scores = {}  # key = tuple of sorted player_ids
+    
+    for g in games:
+        t1_ids = tuple(sorted(g.get('team1_player_ids', [])))
+        t2_ids = tuple(sorted(g.get('team2_player_ids', [])))
+        score1 = g.get('score1', 0) or 0
+        score2 = g.get('score2', 0) or 0
+        
+        team_scores[t1_ids] = team_scores.get(t1_ids, 0) + score1
+        team_scores[t2_ids] = team_scores.get(t2_ids, 0) + score2
+    
+    # Sort by total points
+    sorted_teams = sorted(team_scores.items(), key=lambda x: x[1], reverse=True)
+    
+    # Build top 3
+    top_teams = []
+    for rank, (player_ids, total_points) in enumerate(sorted_teams[:3], 1):
+        player_names = []
+        for pid in player_ids:
+            u = User.find_by_id(mongo, pid)
+            if u:
+                player_names.append(u.name)
+        
+        top_teams.append({
+            "rank": rank,
+            "player_ids": list(player_ids),
+            "player_names": player_names,
+            "total_points": total_points
+        })
+    
+    return jsonify(top_teams), 200
 
 @bp.route('/admin/users', methods=['GET'])
 @jwt_required()

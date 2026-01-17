@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, Users, Clock, CheckCircle2, Trophy, ArrowRight, Play, Save, Shield, LogOut, Settings } from 'lucide-react';
+import { User, Users, Clock, CheckCircle2, Trophy, Play, Save, Shield, LogOut, Settings, Hourglass } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SocketService from '../services/socket';
 import API_URL from '../config';
-import TournamentStandings from '../components/TournamentStandings';
 import ThemeToggle from '../components/ThemeToggle';
 
 const PlayerDashboard = () => {
@@ -18,6 +17,7 @@ const PlayerDashboard = () => {
     const [score2, setScore2] = useState('');
     const [scoreError, setScoreError] = useState('');
     const [myStats, setMyStats] = useState({ wins: 0, points: 0 });
+    const [daySummary, setDaySummary] = useState({ state: 'waiting', games: [], rounds_total: 0, rounds_completed: 0 });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -47,10 +47,6 @@ const PlayerDashboard = () => {
                         );
                         if (myPair) setCurrentGame(myPair);
                     });
-
-                    SocketService.on('blackout_status', (data) => {
-                        console.log('Blackout status:', data);
-                    });
                 }
 
                 // Fetch current game (active or upcoming)
@@ -60,6 +56,12 @@ const PlayerDashboard = () => {
                 if (gRes.data) {
                     setCurrentGame(gRes.data);
                 }
+
+                // Fetch day summary for session state
+                const dsRes = await axios.get(`${API_URL}/player/day-summary`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setDaySummary(dsRes.data);
 
                 // Fetch stats for personal view
                 const sRes = await axios.get(`${API_URL}/tournaments/standings`);
@@ -130,8 +132,141 @@ const PlayerDashboard = () => {
             setScore1('');
             setScore2('');
             setScoreError('');
+            // Refresh day summary
+            const dsRes = await axios.get(`${API_URL}/player/day-summary`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setDaySummary(dsRes.data);
         } catch (err) {
             setScoreError("Submission failed. Try again.");
+        }
+    };
+
+    // Render session content based on state
+    const renderSessionContent = () => {
+        // Active game takes priority
+        if (currentGame) {
+            return (
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                        <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Your Team</p>
+                            <div style={{ fontWeight: '800', fontSize: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {currentGame.team1_player_ids?.includes(user.id || user._id) ?
+                                    currentGame.team1_player_names?.map(name => <span key={name} style={{ color: name === user.name ? 'var(--brand-teal)' : 'white' }}>{name}</span>) :
+                                    currentGame.team2_player_names?.map(name => <span key={name} style={{ color: name === user.name ? 'var(--brand-teal)' : 'white' }}>{name}</span>)
+                                }
+                            </div>
+                            <input
+                                type="number"
+                                className="input-field"
+                                style={{ width: '80px', textAlign: 'center', fontSize: '24px', fontWeight: '800', marginTop: '16px', marginBottom: '0', opacity: currentGame.status === 'finalized' ? 0.5 : 1 }}
+                                placeholder="0"
+                                value={currentGame.status === 'finalized' ? currentGame.score1 : score1}
+                                onChange={(e) => setScore1(e.target.value)}
+                                disabled={currentGame.status === 'finalized'}
+                            />
+                        </div>
+
+                        <div style={{ fontSize: '20px', fontWeight: '800', opacity: 0.2, margin: '0 20px', marginTop: '40px' }}>VS</div>
+
+                        <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Opponents</p>
+                            <div style={{ fontWeight: '800', fontSize: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {!currentGame.team1_player_ids?.includes(user.id || user._id) ?
+                                    currentGame.team1_player_names?.map(name => <span key={name}>{name}</span>) :
+                                    currentGame.team2_player_names?.map(name => <span key={name}>{name}</span>)
+                                }
+                            </div>
+                            <input
+                                type="number"
+                                className="input-field"
+                                style={{ width: '80px', textAlign: 'center', fontSize: '24px', fontWeight: '800', marginTop: '16px', marginBottom: '0', opacity: currentGame.status === 'finalized' ? 0.5 : 1 }}
+                                placeholder="0"
+                                value={currentGame.status === 'finalized' ? currentGame.score2 : score2}
+                                onChange={(e) => setScore2(e.target.value)}
+                                disabled={currentGame.status === 'finalized'}
+                            />
+                        </div>
+                    </div>
+
+                    {scoreError && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{scoreError}</p>}
+
+                    {currentGame.status === 'finalized' ? (
+                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid #10b98133', color: '#10b981', fontWeight: '700' }}>
+                            Match Result Finalized
+                        </div>
+                    ) : (
+                        <button
+                            className="btn-primary"
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}
+                            onClick={handleSubmitScore}
+                        >
+                            <Save size={20} />
+                            Submit Final Results
+                        </button>
+                    )}
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '16px' }}>
+                        {currentGame.status === 'finalized' ? "Results have been recorded by the Director or a teammate." : "Only one player per game needs to submit. Results are final."}
+                    </p>
+                </div>
+            );
+        }
+
+        // State-based content
+        switch (daySummary.state) {
+            case 'day_complete':
+                return (
+                    <div style={{ padding: '30px 20px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(99, 102, 241, 0.05))', borderRadius: '16px' }}>
+                        <Trophy size={48} style={{ color: '#fbbf24', marginBottom: '12px' }} />
+                        <h4 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px' }}>All Games Complete!</h4>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+                            Await The Big Reveal to see today's Golden Bag winner! 🏆
+                        </p>
+                    </div>
+                );
+
+            case 'between_rounds':
+                return (
+                    <div style={{ padding: '20px', textAlign: 'center' }}>
+                        {/* Show completed game results */}
+                        {daySummary.games.map((game, idx) => (
+                            <div key={idx} style={{
+                                background: game.won ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                border: `1px solid ${game.won ? '#10b98133' : '#ef444433'}`,
+                                borderRadius: '12px',
+                                padding: '16px',
+                                marginBottom: '12px'
+                            }}>
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                                    Round {game.round}
+                                </div>
+                                <div style={{ fontSize: '24px', fontWeight: '800', color: game.won ? '#10b981' : '#ef4444' }}>
+                                    {game.my_score} - {game.opponent_score}
+                                </div>
+                                <div style={{ fontSize: '13px', color: game.won ? '#10b981' : '#ef4444', fontWeight: '700' }}>
+                                    {game.won ? 'Victory!' : 'Defeat'}
+                                </div>
+                            </div>
+                        ))}
+
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', marginTop: '16px' }}>
+                            <Hourglass size={24} style={{ color: 'var(--brand-teal)', marginBottom: '8px' }} />
+                            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+                                Waiting for Round {daySummary.rounds_completed + 1} pairings...
+                            </p>
+                        </div>
+                    </div>
+                );
+
+            case 'waiting':
+            default:
+                return (
+                    <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px' }}>
+                        <p style={{ color: 'var(--text-muted)' }}>Pairings will be revealed by the Director soon.</p>
+                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>Hang tight and grab a brat!</p>
+                    </div>
+                );
         }
     };
 
@@ -226,6 +361,7 @@ const PlayerDashboard = () => {
                         </div>
                     )}
 
+                    {/* Your Session Card */}
                     <div className="glass-card" style={{
                         padding: '24px',
                         border: currentGame?.status === 'active' && timer === 0 ? '1px solid #ef4444' : '1px solid var(--border)',
@@ -256,82 +392,10 @@ const PlayerDashboard = () => {
                             )}
                         </div>
 
-                        {currentGame ? (
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Your Team</p>
-                                        <div style={{ fontWeight: '800', fontSize: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                            {currentGame.team1_player_ids?.includes(user.id || user._id) ?
-                                                currentGame.team1_player_names?.map(name => <span key={name} style={{ color: name === user.name ? 'var(--brand-teal)' : 'white' }}>{name}</span>) :
-                                                currentGame.team2_player_names?.map(name => <span key={name} style={{ color: name === user.name ? 'var(--brand-teal)' : 'white' }}>{name}</span>)
-                                            }
-                                        </div>
-                                        <input
-                                            type="number"
-                                            className="input-field"
-                                            style={{ width: '80px', textAlign: 'center', fontSize: '24px', fontWeight: '800', marginTop: '16px', marginBottom: '0', opacity: currentGame.status === 'finalized' ? 0.5 : 1 }}
-                                            placeholder="0"
-                                            value={currentGame.status === 'finalized' ? currentGame.score1 : score1}
-                                            onChange={(e) => setScore1(e.target.value)}
-                                            disabled={currentGame.status === 'finalized'}
-                                        />
-                                    </div>
-
-                                    <div style={{ fontSize: '20px', fontWeight: '800', opacity: 0.2, margin: '0 20px', marginTop: '40px' }}>VS</div>
-
-                                    <div style={{ flex: 1 }}>
-                                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Opponents</p>
-                                        <div style={{ fontWeight: '800', fontSize: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                            {!currentGame.team1_player_ids?.includes(user.id || user._id) ?
-                                                currentGame.team1_player_names?.map(name => <span key={name}>{name}</span>) :
-                                                currentGame.team2_player_names?.map(name => <span key={name}>{name}</span>)
-                                            }
-                                        </div>
-                                        <input
-                                            type="number"
-                                            className="input-field"
-                                            style={{ width: '80px', textAlign: 'center', fontSize: '24px', fontWeight: '800', marginTop: '16px', marginBottom: '0', opacity: currentGame.status === 'finalized' ? 0.5 : 1 }}
-                                            placeholder="0"
-                                            value={currentGame.status === 'finalized' ? currentGame.score2 : score2}
-                                            onChange={(e) => setScore2(e.target.value)}
-                                            disabled={currentGame.status === 'finalized'}
-                                        />
-                                    </div>
-                                </div>
-
-                                {scoreError && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{scoreError}</p>}
-
-                                {currentGame.status === 'finalized' ? (
-                                    <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid #10b98133', color: '#10b981', fontWeight: '700' }}>
-                                        Match Result Finalized
-                                    </div>
-                                ) : (
-                                    <button
-                                        className="btn-primary"
-                                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}
-                                        onClick={handleSubmitScore}
-                                    >
-                                        <Save size={20} />
-                                        Submit Final Results
-                                    </button>
-                                )}
-                                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '16px' }}>
-                                    {currentGame.status === 'finalized' ? "Results have been recorded by the Director or a teammate." : "Only one player per game needs to submit. Results are final."}
-                                </p>
-                            </div>
-                        ) : (
-                            <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px' }}>
-                                <p style={{ color: 'var(--text-muted)' }}>Pairings will be revealed by the Director soon.</p>
-                                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>Hang tight and grab a brat!</p>
-                            </div>
-                        )}
+                        {renderSessionContent()}
                     </div>
 
-                    {/* Current Tournament View (Leaderboard) */}
-                    <TournamentStandings />
-
-                    {/* All-Time stats summary */}
+                    {/* Personal Stats (only shows player's own stats, no leaderboard) */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div className="glass-card" style={{ padding: '24px', textAlign: 'center', border: '1px solid var(--border)' }}>
                             <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Your Wins</p>
