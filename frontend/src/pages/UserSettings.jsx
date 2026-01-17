@@ -282,7 +282,8 @@ const UserSettings = () => {
                             </p>
                             <ul style={{ color: 'var(--text-muted)', fontSize: '13px', paddingLeft: '20px', margin: 0 }}>
                                 <li style={{ marginBottom: '6px' }}>Golden display when playing as Power Player</li>
-                                <li style={{ marginBottom: '6px' }}>Recognition for keeping everyone in the game</li>
+                                <li style={{ marginBottom: '6px' }}>Control your entire game when playing solo (1v2)</li>
+                                <li style={{ marginBottom: '6px' }}>Fair rotation — once selected, you won't be picked again until everyone else has had a turn</li>
                                 <li>You're still teamed up in regular games most of the time</li>
                             </ul>
                         </div>

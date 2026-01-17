@@ -18,6 +18,7 @@ const PlayerDashboard = () => {
     const [scoreError, setScoreError] = useState('');
     const [myStats, setMyStats] = useState({ wins: 0, points: 0 });
     const [daySummary, setDaySummary] = useState({ state: 'waiting', games: [], rounds_total: 0, rounds_completed: 0 });
+    const [showPowerPlayerToast, setShowPowerPlayerToast] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -85,6 +86,16 @@ const PlayerDashboard = () => {
             SocketService.disconnect();
         };
     }, []);
+
+    // Show Power Player toast after 12 seconds for non-Power Players
+    useEffect(() => {
+        if (user && !user.is_power_player) {
+            const toastTimer = setTimeout(() => {
+                setShowPowerPlayerToast(true);
+            }, 12000);
+            return () => clearTimeout(toastTimer);
+        }
+    }, [user]);
 
     useEffect(() => {
         if (!currentGame || currentGame.status !== 'active' || !currentGame.end_time) {
@@ -493,6 +504,77 @@ const PlayerDashboard = () => {
                     </div>
                 </div>
             )}
+
+            {/* Power Player Toast Notification */}
+            <AnimatePresence>
+                {showPowerPlayerToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 50 }}
+                        style={{
+                            position: 'fixed',
+                            bottom: '24px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.1))',
+                            border: '1px solid rgba(251, 191, 36, 0.4)',
+                            borderRadius: '16px',
+                            padding: '16px 24px',
+                            maxWidth: '360px',
+                            boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+                            backdropFilter: 'blur(10px)',
+                            zIndex: 1000
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                            <Zap size={24} style={{ color: '#fbbf24', flexShrink: 0, marginTop: '2px' }} />
+                            <div>
+                                <p style={{ color: '#fbbf24', fontWeight: '700', marginBottom: '6px', fontSize: '14px' }}>
+                                    Interested in being a Power Player?
+                                </p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '12px' }}>
+                                    Take control of solo games and get the golden treatment!
+                                </p>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={() => {
+                                            setShowPowerPlayerToast(false);
+                                            navigate('/settings');
+                                        }}
+                                        style={{
+                                            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                                            color: '#1f2937',
+                                            border: 'none',
+                                            padding: '8px 16px',
+                                            borderRadius: '8px',
+                                            fontWeight: '700',
+                                            fontSize: '12px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Learn More
+                                    </button>
+                                    <button
+                                        onClick={() => setShowPowerPlayerToast(false)}
+                                        style={{
+                                            background: 'transparent',
+                                            color: 'var(--text-muted)',
+                                            border: '1px solid var(--border)',
+                                            padding: '8px 16px',
+                                            borderRadius: '8px',
+                                            fontSize: '12px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Maybe Later
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
