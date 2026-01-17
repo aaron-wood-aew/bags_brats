@@ -99,6 +99,56 @@ def get_me():
         return jsonify({"error": "User not found"}), 404
     return jsonify(user.to_dict()), 200
 
+@bp.route('/user/profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    """Update user profile (name, phone)"""
+    user_id = get_jwt_identity()
+    user = User.find_by_id(mongo, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    data = request.json
+    
+    # Update allowed fields
+    if 'name' in data and data['name']:
+        user.name = data['name'].strip()
+    if 'phone' in data:
+        user.phone = data['phone'].strip() if data['phone'] else None
+    
+    user.save(mongo)
+    return jsonify({"msg": "Profile updated successfully", "user": user.to_dict()}), 200
+
+@bp.route('/user/password', methods=['PUT'])
+@jwt_required()
+def change_password():
+    """Change user password (requires current password)"""
+    user_id = get_jwt_identity()
+    user = User.find_by_id(mongo, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    # OAuth users don't have passwords
+    if user.google_id and not user.password_hash:
+        return jsonify({"error": "Google users cannot set a password here. Use Google sign-in."}), 400
+    
+    data = request.json
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    
+    if not current_password or not new_password:
+        return jsonify({"error": "Current and new password required"}), 400
+    
+    if len(new_password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+    
+    if not user.check_password(current_password):
+        return jsonify({"error": "Current password is incorrect"}), 401
+    
+    user.set_password(new_password)
+    user.save(mongo)
+    return jsonify({"msg": "Password changed successfully"}), 200
+
 @bp.route('/admin/proxy-register', methods=['POST'])
 @jwt_required()
 def proxy_register():

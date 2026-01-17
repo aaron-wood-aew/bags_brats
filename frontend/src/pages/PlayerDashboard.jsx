@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, Users, Clock, CheckCircle2, Trophy, ArrowRight, Play, Save, Shield, LogOut } from 'lucide-react';
+import { User, Users, Clock, CheckCircle2, Trophy, ArrowRight, Play, Save, Shield, LogOut, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SocketService from '../services/socket';
@@ -165,12 +165,20 @@ const PlayerDashboard = () => {
                         </button>
                     )}
                     <button
+                        onClick={() => navigate('/settings')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                        title="Settings"
+                    >
+                        <Settings size={20} />
+                    </button>
+                    <button
                         onClick={() => {
                             localStorage.removeItem('token');
                             localStorage.removeItem('user');
                             navigate('/login');
                         }}
                         style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                        title="Logout"
                     >
                         <LogOut size={20} />
                     </button>
