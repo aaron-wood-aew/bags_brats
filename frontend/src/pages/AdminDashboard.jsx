@@ -48,7 +48,7 @@ const AdminDashboard = () => {
             if (!activeTournament) return;
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get(`${API_URL}/games`, {
+                const res = await axios.get(`${API_URL}/admin/games`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const todayGames = res.data.filter(g => g.day_index === activeTournament.current_day_index);
