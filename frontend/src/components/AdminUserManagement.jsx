@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle } from 'lucide-react';
+import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key } from 'lucide-react';
 import { motion } from 'framer-motion';
 import API_URL from '../config';
 
@@ -100,6 +100,24 @@ const AdminUserManagement = () => {
         }
     };
 
+    const resetPassword = async (userId, userName) => {
+        const newPassword = prompt(`Enter new password for ${userName} (min 6 characters):`);
+        if (!newPassword) return;
+        if (newPassword.length < 6) {
+            alert('Password must be at least 6 characters');
+            return;
+        }
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`${API_URL}/admin/users/${userId}/reset-password`, { new_password: newPassword }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert(`Password reset for ${userName}`);
+        } catch (err) {
+            alert(err.response?.data?.error || 'Failed to reset password');
+        }
+    };
+
     if (loading) return <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px' }}>Loading Roster...</div>;
 
     return (
@@ -195,6 +213,13 @@ const AdminUserManagement = () => {
                                 </td>
                                 <td style={{ padding: '12px', textAlign: 'right' }}>
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                                        <button
+                                            onClick={() => resetPassword(user._id, user.name)}
+                                            style={{ background: 'none', border: 'none', color: '#fbbf24', cursor: 'pointer' }}
+                                            title="Reset Password"
+                                        >
+                                            <Key size={18} />
+                                        </button>
                                         <button
                                             onClick={() => toggleRole(user._id, user.role)}
                                             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}

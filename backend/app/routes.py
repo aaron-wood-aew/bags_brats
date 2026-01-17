@@ -726,6 +726,30 @@ def delete_user(user_id):
     mongo.db.users.delete_one({"_id": ObjectId(user_id)})
     return jsonify({"msg": "User deleted"}), 200
 
+@bp.route('/admin/users/<user_id>/reset-password', methods=['PUT'])
+@jwt_required()
+def admin_reset_password(user_id):
+    """Admin resets a user's password (for locked-out users)."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+    
+    data = request.json
+    new_password = data.get('new_password')
+    
+    if not new_password or len(new_password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+    
+    user = User.find_by_id(mongo, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    user.set_password(new_password)
+    user.save(mongo)
+    
+    return jsonify({"msg": f"Password reset for {user.name}"}), 200
+
 @bp.route('/admin/games', methods=['GET'])
 @jwt_required()
 def list_active_games():
