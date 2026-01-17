@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, Users, Clock, CheckCircle2, Trophy, Play, Save, Shield, LogOut, Settings, Hourglass } from 'lucide-react';
+import { User, Users, Clock, CheckCircle2, Trophy, Play, Save, Shield, LogOut, Settings, Hourglass, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SocketService from '../services/socket';
@@ -146,15 +146,68 @@ const PlayerDashboard = () => {
     const renderSessionContent = () => {
         // Active game takes priority
         if (currentGame) {
+            const isPowerGame = currentGame.is_power_game;
+
             return (
                 <div style={{ textAlign: 'center' }}>
+                    {/* Power Game Banner */}
+                    {isPowerGame && (
+                        <div style={{
+                            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.1))',
+                            border: '1px solid rgba(251, 191, 36, 0.3)',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            marginBottom: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                        }}>
+                            <Zap size={20} style={{ color: '#fbbf24' }} />
+                            <span style={{ color: '#fbbf24', fontWeight: '800', fontSize: '14px' }}>POWER GAME</span>
+                            <Zap size={20} style={{ color: '#fbbf24' }} />
+                        </div>
+                    )}
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <div style={{ flex: 1 }}>
                             <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Your Team</p>
                             <div style={{ fontWeight: '800', fontSize: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 {currentGame.team1_player_ids?.includes(user.id || user._id) ?
-                                    currentGame.team1_player_names?.map(name => <span key={name} style={{ color: name === user.name ? 'var(--brand-teal)' : 'white' }}>{name}</span>) :
-                                    currentGame.team2_player_names?.map(name => <span key={name} style={{ color: name === user.name ? 'var(--brand-teal)' : 'white' }}>{name}</span>)
+                                    currentGame.team1_player_names?.map(name => {
+                                        const hasPowerIcon = name.includes('⚡');
+                                        const cleanName = name.replace(' ⚡', '');
+                                        return (
+                                            <span key={name} style={{
+                                                color: cleanName === user.name ? 'var(--brand-teal)' : (hasPowerIcon ? '#fbbf24' : 'white'),
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px'
+                                            }}>
+                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
+                                                {cleanName}
+                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
+                                            </span>
+                                        );
+                                    }) :
+                                    currentGame.team2_player_names?.map(name => {
+                                        const hasPowerIcon = name.includes('⚡');
+                                        const cleanName = name.replace(' ⚡', '');
+                                        return (
+                                            <span key={name} style={{
+                                                color: cleanName === user.name ? 'var(--brand-teal)' : (hasPowerIcon ? '#fbbf24' : 'white'),
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px'
+                                            }}>
+                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
+                                                {cleanName}
+                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
+                                            </span>
+                                        );
+                                    })
                                 }
                             </div>
                             <input
@@ -174,8 +227,40 @@ const PlayerDashboard = () => {
                             <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Opponents</p>
                             <div style={{ fontWeight: '800', fontSize: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 {!currentGame.team1_player_ids?.includes(user.id || user._id) ?
-                                    currentGame.team1_player_names?.map(name => <span key={name}>{name}</span>) :
-                                    currentGame.team2_player_names?.map(name => <span key={name}>{name}</span>)
+                                    currentGame.team1_player_names?.map(name => {
+                                        const hasPowerIcon = name.includes('⚡');
+                                        const cleanName = name.replace(' ⚡', '');
+                                        return (
+                                            <span key={name} style={{
+                                                color: hasPowerIcon ? '#fbbf24' : 'white',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px'
+                                            }}>
+                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
+                                                {cleanName}
+                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
+                                            </span>
+                                        );
+                                    }) :
+                                    currentGame.team2_player_names?.map(name => {
+                                        const hasPowerIcon = name.includes('⚡');
+                                        const cleanName = name.replace(' ⚡', '');
+                                        return (
+                                            <span key={name} style={{
+                                                color: hasPowerIcon ? '#fbbf24' : 'white',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px'
+                                            }}>
+                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
+                                                {cleanName}
+                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
+                                            </span>
+                                        );
+                                    })
                                 }
                             </div>
                             <input

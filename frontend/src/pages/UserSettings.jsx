@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Lock, Phone, Mail, Save, Check } from 'lucide-react';
+import { ArrowLeft, User, Lock, Phone, Mail, Save, Check, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import API_URL from '../config';
 
@@ -204,6 +204,122 @@ const UserSettings = () => {
                         {profileSaving ? 'Saving...' : profileSuccess ? 'Saved!' : 'Save Changes'}
                     </button>
                 </form>
+            </motion.div>
+
+            {/* Power Player Section */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                className="glass-card"
+                style={{
+                    padding: '24px',
+                    marginBottom: '24px',
+                    background: user?.is_power_player
+                        ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05))'
+                        : undefined,
+                    border: user?.is_power_player ? '1px solid rgba(251, 191, 36, 0.3)' : undefined
+                }}
+            >
+                <h2 style={{
+                    fontSize: '20px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    color: user?.is_power_player ? '#fbbf24' : 'white'
+                }}>
+                    <Zap size={22} style={{ color: '#fbbf24' }} />
+                    Power Player
+                    {user?.is_power_player && (
+                        <span style={{
+                            fontSize: '11px',
+                            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                            color: '#1f2937',
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            fontWeight: '800',
+                            textTransform: 'uppercase'
+                        }}>
+                            Active
+                        </span>
+                    )}
+                </h2>
+
+                {user?.is_power_player ? (
+                    <div>
+                        <div style={{
+                            background: 'rgba(251, 191, 36, 0.1)',
+                            padding: '16px',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(251, 191, 36, 0.2)'
+                        }}>
+                            <p style={{ color: '#fbbf24', fontWeight: '700', marginBottom: '8px' }}>
+                                ⚡ You are a Power Player!
+                            </p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+                                You may be selected to play solo (1v2) when needed to ensure everyone gets to play.
+                                Thank you for stepping up!
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px', lineHeight: '1.6' }}>
+                            <strong style={{ color: 'white' }}>What is a Power Player?</strong><br />
+                            When we have a player count that isn't divisible by 4, some games need a skilled player
+                            to compete solo (1v2) so everyone can play. Power Players volunteer for this role.
+                        </p>
+
+                        <div style={{
+                            background: 'rgba(255,255,255,0.03)',
+                            padding: '16px',
+                            borderRadius: '12px',
+                            marginBottom: '16px'
+                        }}>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '12px' }}>
+                                <strong style={{ color: '#fbbf24' }}>✨ Benefits:</strong>
+                            </p>
+                            <ul style={{ color: 'var(--text-muted)', fontSize: '13px', paddingLeft: '20px', margin: 0 }}>
+                                <li style={{ marginBottom: '6px' }}>Golden display when playing as Power Player</li>
+                                <li style={{ marginBottom: '6px' }}>Recognition for keeping everyone in the game</li>
+                                <li>You're still teamed up in regular games most of the time</li>
+                            </ul>
+                        </div>
+
+                        <button
+                            onClick={async () => {
+                                if (!window.confirm('Become a Power Player? This choice is permanent and shows you are willing to play solo when needed.')) return;
+                                try {
+                                    await axios.put(`${API_URL}/user/power-player`,
+                                        {},
+                                        { headers: { Authorization: `Bearer ${token}` } }
+                                    );
+                                    fetchUser();
+                                } catch (err) {
+                                    alert(err.response?.data?.error || 'Failed to opt in');
+                                }
+                            }}
+                            className="btn-primary"
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                                color: '#1f2937',
+                                fontWeight: '800'
+                            }}
+                        >
+                            <Zap size={18} />
+                            Become a Power Player
+                        </button>
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'center' }}>
+                            This choice is permanent
+                        </p>
+                    </div>
+                )}
             </motion.div>
 
             {/* Password Section */}

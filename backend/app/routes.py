@@ -212,6 +212,23 @@ def change_password():
     user.save(mongo)
     return jsonify({"msg": "Password changed successfully"}), 200
 
+@bp.route('/user/power-player', methods=['PUT'])
+@jwt_required()
+def opt_in_power_player():
+    """Permanently opt-in as a Power Player."""
+    user_id = get_jwt_identity()
+    user = User.find_by_id(mongo, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    # Already a power player
+    if user.is_power_player:
+        return jsonify({"msg": "You are already a Power Player"}), 200
+    
+    user.is_power_player = True
+    user.save(mongo)
+    return jsonify({"msg": "Welcome to the Power Player club! ⚡"}), 200
+
 @bp.route('/admin/proxy-register', methods=['POST'])
 @jwt_required()
 def proxy_register():
