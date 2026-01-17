@@ -5,13 +5,18 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from flask_socketio import SocketIO
 from config import Config
+import os
 
 mongo = PyMongo()
 bcrypt = Bcrypt()
 jwt = JWTManager()
 socketio = SocketIO(cors_allowed_origins="*")
 
+# Global scheduler reference
+scheduler = None
+
 def create_app(config_class=Config):
+    global scheduler
     app = Flask(__name__)
     app.config.from_object(config_class)
 
@@ -30,6 +35,13 @@ def create_app(config_class=Config):
         except Exception as e:
             print(f"❌ MongoDB connection failed: {e}")
             print(f"   Using URI: {app.config['MONGO_URI']}")
+        
+        # Start scheduler (only in main process, not reloader)
+        if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+            from app.scheduler import create_scheduler
+            scheduler = create_scheduler(mongo)
+            scheduler.start()
+            print(f"✅ Scheduler started (timezone: {config_class.TOURNAMENT_TIMEZONE})")
 
     from app.routes import bp as main_bp
     app.register_blueprint(main_bp)

@@ -56,6 +56,12 @@ def player_check_in():
     user = User.find_by_id(mongo, user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
+    
+    # Check if check-in window is open
+    from app.scheduler import is_checkin_window_open
+    is_open, message = is_checkin_window_open(mongo)
+    if not is_open:
+        return jsonify({"error": message, "check_in_closed": True}), 403
         
     user.checked_in = True
     user.checked_in_at = datetime.utcnow()
@@ -736,6 +742,30 @@ def toggle_blackout():
     broadcast_blackout(str(tournament._id), is_blackout)
     
     return jsonify({"msg": "Blackout status updated", "blackout": is_blackout}), 200
+
+@bp.route('/admin/tournament/toggle-checkin', methods=['POST'])
+@jwt_required()
+def toggle_checkin():
+    """Admin can open or close check-in early."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+        
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"error": "No active tournament"}), 400
+        
+    data = request.json
+    check_in_open = data.get('check_in_open', False)
+    
+    # Update tournament check_in_open flag
+    mongo.db.tournaments.update_one(
+        {"_id": tournament._id},
+        {"$set": {"check_in_open": check_in_open}}
+    )
+    
+    return jsonify({"msg": f"Check-in {'opened' if check_in_open else 'closed'}", "check_in_open": check_in_open}), 200
 
 @bp.route('/admin/tournament/top-teams', methods=['GET'])
 @jwt_required()

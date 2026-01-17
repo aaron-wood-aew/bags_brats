@@ -114,6 +114,8 @@ const PlayerDashboard = () => {
         return () => clearInterval(interval);
     }, [currentGame]);
 
+    const [checkInError, setCheckInError] = useState('');
+
     const handleCheckIn = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -121,8 +123,14 @@ const PlayerDashboard = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCheckedIn(true);
+            setCheckInError('');
         } catch (err) {
-            console.error("Check-in failed", err);
+            if (err.response?.data?.check_in_closed) {
+                setCheckInError(err.response.data.error);
+            } else {
+                console.error("Check-in failed", err);
+                setCheckInError("Check-in failed. Please try again.");
+            }
         }
     };
 
@@ -444,6 +452,20 @@ const PlayerDashboard = () => {
                                         <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '16px', fontStyle: 'italic' }}>
                                             💵 Don't forget to find the Tournament Director to pay your entry fee!
                                         </p>
+                                        {checkInError && (
+                                            <div style={{
+                                                background: 'rgba(251, 191, 36, 0.1)',
+                                                border: '1px solid rgba(251, 191, 36, 0.3)',
+                                                borderRadius: '8px',
+                                                padding: '12px',
+                                                marginBottom: '16px',
+                                                color: '#fbbf24',
+                                                fontSize: '13px',
+                                                textAlign: 'center'
+                                            }}>
+                                                ⏰ {checkInError}
+                                            </div>
+                                        )}
                                         <button onClick={handleCheckIn} className="btn-primary" style={{ width: '100%' }}>
                                             I'm Here!
                                         </button>

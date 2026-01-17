@@ -8,6 +8,10 @@ class Config:
     MONGO_URI = os.environ.get('MONGO_URI')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
     
+    # Tournament timezone for scheduled tasks and check-in windows
+    TOURNAMENT_TIMEZONE = os.environ.get('TOURNAMENT_TIMEZONE', 'America/Chicago')
+    CHECK_IN_HOUR = int(os.environ.get('CHECK_IN_HOUR', 17))  # 5pm default
+    
     # Validate required secrets at startup
     @classmethod
     def validate(cls):
@@ -37,4 +41,3 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
     GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'https://bagsbrats-production.up.railway.app/auth/google/callback')
     FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://efficient-insight-production.up.railway.app')
-

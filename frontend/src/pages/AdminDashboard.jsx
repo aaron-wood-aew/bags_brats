@@ -447,6 +447,37 @@ const AdminDashboard = () => {
                                         </div>
                                     )}
 
+                                    {/* Open Check-In Early Button */}
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const token = localStorage.getItem('token');
+                                                const res = await axios.post(`${API_URL}/admin/tournament/toggle-checkin`,
+                                                    { check_in_open: !activeTournament.check_in_open },
+                                                    { headers: { Authorization: `Bearer ${token}` } }
+                                                );
+                                                alert(res.data.msg);
+                                                fetchActiveTournament();
+                                            } catch (err) {
+                                                alert(err.response?.data?.error || 'Failed to toggle check-in');
+                                            }
+                                        }}
+                                        className="btn-primary"
+                                        style={{
+                                            width: '100%',
+                                            marginTop: '16px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '8px',
+                                            background: activeTournament.check_in_open ? 'rgba(16, 185, 129, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+                                            border: activeTournament.check_in_open ? '1px solid #10b981' : '1px solid #fbbf24',
+                                            color: activeTournament.check_in_open ? '#10b981' : '#fbbf24'
+                                        }}
+                                    >
+                                        {activeTournament.check_in_open ? '🔓 Check-In Open (Close Early)' : '⏰ Open Check-In Early'}
+                                    </button>
+
                                     {/* End Tournament Button */}
                                     <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
                                         <button
