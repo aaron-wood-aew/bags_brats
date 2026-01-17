@@ -18,6 +18,7 @@ const AdminDashboard = () => {
     const [roundsPerDay, setRoundsPerDay] = useState(3);
     const [selectedDates, setSelectedDates] = useState([]); // Array of YYYY-MM-DD
     const [viewDate, setViewDate] = useState(new Date()); // Controls which month we see
+    const [selectedDayIndex, setSelectedDayIndex] = useState(null); // For day tabs navigation
     const navigate = useNavigate();
 
     const fetchActiveTournament = async () => {
@@ -32,6 +33,13 @@ const AdminDashboard = () => {
     useEffect(() => {
         fetchActiveTournament();
     }, []);
+
+    // Sync selectedDayIndex with tournament's current day
+    useEffect(() => {
+        if (activeTournament && selectedDayIndex === null) {
+            setSelectedDayIndex(activeTournament.current_day_index || 0);
+        }
+    }, [activeTournament, selectedDayIndex]);
 
     const handleCreateTournament = async (e) => {
         e.preventDefault();
@@ -340,11 +348,80 @@ const AdminDashboard = () => {
                                     <div style={{ background: 'var(--brand-teal-glow)', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--brand-teal)' }}>
                                         <div style={{ fontSize: '12px', color: 'var(--brand-teal)', fontWeight: '700', textTransform: 'uppercase' }}>Active Tournament</div>
                                         <div style={{ fontSize: '18px', fontWeight: '800', margin: '4px 0' }}>{activeTournament.name}</div>
-                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{activeTournament.dates.length} Days • Day {activeTournament.current_day_index + 1}</div>
+                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{activeTournament.dates.length} Days • Day {(selectedDayIndex ?? activeTournament.current_day_index) + 1}</div>
                                     </div>
 
-                                    {/* Round Manager */}
-                                    <RoundManager tournament={activeTournament} onUpdate={fetchActiveTournament} />
+                                    {/* Day Tabs */}
+                                    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
+                                        {activeTournament.dates.map((date, idx) => {
+                                            const isSelected = idx === (selectedDayIndex ?? activeTournament.current_day_index);
+                                            const isCurrent = idx === activeTournament.current_day_index;
+                                            const isPast = idx < activeTournament.current_day_index;
+                                            const isFuture = idx > activeTournament.current_day_index;
+
+                                            const displayDate = new Date(date + 'T12:00:00');
+                                            const dayName = displayDate.toLocaleDateString('en-US', { weekday: 'short' });
+                                            const dayNum = displayDate.getDate();
+
+                                            return (
+                                                <button
+                                                    key={date}
+                                                    onClick={() => setSelectedDayIndex(idx)}
+                                                    style={{
+                                                        padding: '10px 16px',
+                                                        borderRadius: '8px',
+                                                        border: isSelected ? '2px solid var(--brand-teal)' : '1px solid var(--border)',
+                                                        background: isSelected ? 'var(--brand-teal-glow)' : 'rgba(255,255,255,0.02)',
+                                                        color: isSelected ? 'var(--brand-teal)' : isPast ? 'var(--text-muted)' : 'white',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        minWidth: '60px',
+                                                        opacity: isPast ? 0.7 : 1,
+                                                        position: 'relative'
+                                                    }}
+                                                >
+                                                    <span style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>{dayName}</span>
+                                                    <span style={{ fontSize: '18px', fontWeight: '800' }}>{dayNum}</span>
+                                                    {isCurrent && (
+                                                        <span style={{
+                                                            position: 'absolute',
+                                                            top: '-6px',
+                                                            right: '-6px',
+                                                            width: '12px',
+                                                            height: '12px',
+                                                            background: '#10b981',
+                                                            borderRadius: '50%',
+                                                            border: '2px solid var(--bg)'
+                                                        }} />
+                                                    )}
+                                                    {isPast && (
+                                                        <Check size={12} style={{ color: '#10b981', marginTop: '2px' }} />
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Round Manager - only show for current day */}
+                                    {(selectedDayIndex ?? activeTournament.current_day_index) === activeTournament.current_day_index ? (
+                                        <RoundManager tournament={activeTournament} onUpdate={fetchActiveTournament} />
+                                    ) : (selectedDayIndex ?? 0) < activeTournament.current_day_index ? (
+                                        /* Past day - show completed games */
+                                        <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center' }}>
+                                            <Check size={32} style={{ color: '#10b981', marginBottom: '8px' }} />
+                                            <div style={{ fontWeight: '700', marginBottom: '4px' }}>Day Completed</div>
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>View game results in the Games tab</div>
+                                        </div>
+                                    ) : (
+                                        /* Future day - not yet started */
+                                        <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center' }}>
+                                            <Calendar size={32} style={{ color: 'var(--text-muted)', marginBottom: '8px' }} />
+                                            <div style={{ fontWeight: '700', marginBottom: '4px' }}>Upcoming Day</div>
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Pairings will be generated when this day begins</div>
+                                        </div>
+                                    )}
 
                                     {/* End Tournament Button */}
                                     <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
