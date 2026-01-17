@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, Lock, Unlock, ChevronLeft, ChevronRight, LogOut, LayoutDashboard } from 'lucide-react';
+import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, Lock, Unlock, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminProxyRegister from '../components/AdminProxyRegister';
 import AdminUserManagement from '../components/AdminUserManagement';
@@ -19,6 +19,7 @@ const AdminDashboard = () => {
     const [selectedDates, setSelectedDates] = useState([]); // Array of YYYY-MM-DD
     const [viewDate, setViewDate] = useState(new Date()); // Controls which month we see
     const [selectedDayIndex, setSelectedDayIndex] = useState(null); // For day tabs navigation
+    const [allGamesComplete, setAllGamesComplete] = useState(false);
     const navigate = useNavigate();
 
     const fetchActiveTournament = async () => {
@@ -40,6 +41,29 @@ const AdminDashboard = () => {
             setSelectedDayIndex(activeTournament.current_day_index || 0);
         }
     }, [activeTournament, selectedDayIndex]);
+
+    // Check if all games are complete for the Big Reveal
+    useEffect(() => {
+        const checkGamesComplete = async () => {
+            if (!activeTournament) return;
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get(`${API_URL}/games`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const todayGames = res.data.filter(g => g.day_index === activeTournament.current_day_index);
+                const allFinalized = todayGames.length > 0 && todayGames.every(g => g.status === 'finalized');
+                setAllGamesComplete(allFinalized);
+            } catch (err) {
+                console.error('Failed to check games status', err);
+            }
+        };
+        checkGamesComplete();
+        // Re-check every 10 seconds
+        const interval = setInterval(checkGamesComplete, 10000);
+        return () => clearInterval(interval);
+    }, [activeTournament]);
+
 
     const handleCreateTournament = async (e) => {
         e.preventDefault();
@@ -456,7 +480,7 @@ const AdminDashboard = () => {
                             <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '14px' }}>
                                 Control what players see. Blackout scores during the final rounds to build suspense.
                             </p>
-                            <div style={{ display: 'flex', gap: '12px' }}>
+                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                 {activeTournament?.status === 'blackout' ? (
                                     <button
                                         onClick={() => handleToggleBlackout(false)}
@@ -475,6 +499,30 @@ const AdminDashboard = () => {
                                     </button>
                                 )}
                             </div>
+
+                            {/* Launch Big Reveal Button */}
+                            <button
+                                onClick={() => navigate('/admin/reveal')}
+                                disabled={!allGamesComplete}
+                                className="btn-primary"
+                                style={{
+                                    width: '100%',
+                                    marginTop: '16px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    background: allGamesComplete ? 'linear-gradient(135deg, #fbbf24, #f59e0b)' : 'rgba(255,255,255,0.05)',
+                                    border: allGamesComplete ? 'none' : '1px solid var(--border)',
+                                    color: allGamesComplete ? '#1f2937' : 'var(--text-muted)',
+                                    fontWeight: '800',
+                                    cursor: allGamesComplete ? 'pointer' : 'not-allowed',
+                                    opacity: allGamesComplete ? 1 : 0.5
+                                }}
+                            >
+                                <Star size={18} />
+                                {allGamesComplete ? 'Launch Big Reveal 🏆' : 'Complete all games first...'}
+                            </button>
                         </div>
 
                         {/* Proxy Registration Inline */}
