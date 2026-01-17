@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key } from 'lucide-react';
+import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key, ArrowUpDown, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
 import API_URL from '../config';
 
 const AdminUserManagement = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [sortField, setSortField] = useState('name');
+    const [sortDirection, setSortDirection] = useState('asc');
 
     const fetchUsers = async () => {
         try {
@@ -100,6 +102,18 @@ const AdminUserManagement = () => {
         }
     };
 
+    const togglePaid = async (userId, currentStatus) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/admin/users/${userId}/toggle-paid`, { has_paid: !currentStatus }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchUsers();
+        } catch (err) {
+            console.error("Failed to toggle paid status", err);
+        }
+    };
+
     const resetPassword = async (userId, userName) => {
         const newPassword = prompt(`Enter new password for ${userName} (min 6 characters):`);
         if (!newPassword) return;
@@ -117,6 +131,42 @@ const AdminUserManagement = () => {
             alert(err.response?.data?.error || 'Failed to reset password');
         }
     };
+
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
+
+    const sortedUsers = useMemo(() => {
+        return [...users].sort((a, b) => {
+            let aVal, bVal;
+
+            switch (sortField) {
+                case 'name':
+                    aVal = (a.name || '').toLowerCase();
+                    bVal = (b.name || '').toLowerCase();
+                    break;
+                case 'status':
+                    aVal = a.checked_in ? 1 : 0;
+                    bVal = b.checked_in ? 1 : 0;
+                    break;
+                case 'role':
+                    aVal = a.role === 'admin' ? 1 : 0;
+                    bVal = b.role === 'admin' ? 1 : 0;
+                    break;
+                default:
+                    return 0;
+            }
+
+            if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [users, sortField, sortDirection]);
 
     if (loading) return <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px' }}>Loading Roster...</div>;
 
@@ -141,15 +191,40 @@ const AdminUserManagement = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-                            <th style={{ padding: '12px' }}>Player</th>
-                            <th style={{ padding: '12px' }}>Status</th>
+                            <th
+                                style={{ padding: '12px', cursor: 'pointer', userSelect: 'none' }}
+                                onClick={() => handleSort('name')}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    Player
+                                    <ArrowUpDown size={14} style={{ opacity: sortField === 'name' ? 1 : 0.3 }} />
+                                </div>
+                            </th>
+                            <th
+                                style={{ padding: '12px', cursor: 'pointer', userSelect: 'none' }}
+                                onClick={() => handleSort('status')}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    Status
+                                    <ArrowUpDown size={14} style={{ opacity: sortField === 'status' ? 1 : 0.3 }} />
+                                </div>
+                            </th>
                             <th style={{ padding: '12px' }}>Power</th>
-                            <th style={{ padding: '12px' }}>Role</th>
+                            <th
+                                style={{ padding: '12px', cursor: 'pointer', userSelect: 'none' }}
+                                onClick={() => handleSort('role')}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    Role
+                                    <ArrowUpDown size={14} style={{ opacity: sortField === 'role' ? 1 : 0.3 }} />
+                                </div>
+                            </th>
+                            <th style={{ padding: '12px' }}>Paid</th>
                             <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map((user) => (
+                        {sortedUsers.map((user) => (
                             <tr key={user._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                 <td style={{ padding: '16px 12px' }}>
                                     <div style={{ fontWeight: '600' }}>{user.name}</div>
@@ -210,6 +285,17 @@ const AdminUserManagement = () => {
                                     }}>
                                         {user.role}
                                     </span>
+                                </td>
+                                <td style={{ padding: '12px', cursor: 'pointer' }} onClick={() => togglePaid(user._id, user.has_paid)}>
+                                    {user.has_paid ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '13px' }}>
+                                            <DollarSign size={14} /> Paid
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                                            <Circle size={14} /> Unpaid
+                                        </div>
+                                    )}
                                 </td>
                                 <td style={{ padding: '12px', textAlign: 'right' }}>
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>

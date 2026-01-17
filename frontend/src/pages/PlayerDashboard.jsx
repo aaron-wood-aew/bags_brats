@@ -438,8 +438,11 @@ const PlayerDashboard = () => {
                                     <Clock style={{ color: 'var(--brand-teal)', marginTop: '4px' }} />
                                     <div style={{ flex: 1 }}>
                                         <h3 style={{ marginBottom: '4px' }}>Presence Confirmation</h3>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '12px' }}>
                                             Confirm you are here to be included in today's pairings.
+                                        </p>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '16px', fontStyle: 'italic' }}>
+                                            💵 Don't forget to find the Tournament Director to pay your entry fee!
                                         </p>
                                         <button onClick={handleCheckIn} className="btn-primary" style={{ width: '100%' }}>
                                             I'm Here!

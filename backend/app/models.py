@@ -32,6 +32,7 @@ class User(BaseModel):
         self.checked_in_at = data.get('checked_in_at')
         self.is_power_player = data.get('is_power_player', False)
         self.power_player_used = data.get('power_player_used', False)  # Reset when all power players used
+        self.has_paid = data.get('has_paid', False)  # Entry fee paid for current tournament
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

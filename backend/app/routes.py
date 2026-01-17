@@ -885,6 +885,27 @@ def admin_reset_password(user_id):
     
     return jsonify({"msg": f"Password reset for {user.name}"}), 200
 
+@bp.route('/admin/users/<user_id>/toggle-paid', methods=['POST'])
+@jwt_required()
+def toggle_paid(user_id):
+    """Admin toggles a user's payment status."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+    
+    data = request.json
+    has_paid = data.get('has_paid', False)
+    
+    user = User.find_by_id(mongo, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    user.has_paid = has_paid
+    user.save(mongo)
+    
+    return jsonify({"msg": f"Payment status updated for {user.name}", "has_paid": has_paid}), 200
+
 @bp.route('/admin/games', methods=['GET'])
 @jwt_required()
 def list_active_games():
