@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, Lock, Unlock, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star } from 'lucide-react';
+import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminProxyRegister from '../components/AdminProxyRegister';
 import AdminUserManagement from '../components/AdminUserManagement';
@@ -122,18 +122,6 @@ const AdminDashboard = () => {
             fetchActiveTournament();
         } catch (err) {
             alert("Failed to clear tournament");
-        }
-    };
-
-    const handleToggleBlackout = async (status) => {
-        try {
-            const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/admin/tournament/blackout`, { blackout: status }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            fetchActiveTournament();
-        } catch (err) {
-            alert("Failed to toggle blackout mode");
         }
     };
 
@@ -518,27 +506,8 @@ const AdminDashboard = () => {
                                 <h3 style={{ fontSize: '22px' }}>The Big Reveal</h3>
                             </div>
                             <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '14px' }}>
-                                Control what players see. Blackout scores during the final rounds to build suspense.
+                                Once all rounds are complete, launch the dramatic podium reveal to announce the Golden Bag winner!
                             </p>
-                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                {activeTournament?.status === 'blackout' ? (
-                                    <button
-                                        onClick={() => handleToggleBlackout(false)}
-                                        className="btn-primary"
-                                        style={{ flex: 1, fontSize: '14px', background: 'var(--bg)', border: '1px solid var(--brand-teal)' }}
-                                    >
-                                        <Unlock size={14} style={{ marginRight: '6px' }} /> Reveal Results
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => handleToggleBlackout(true)}
-                                        className="btn-primary"
-                                        style={{ flex: 1, fontSize: '14px' }}
-                                    >
-                                        <Lock size={14} style={{ marginRight: '6px' }} /> Blackout Mode
-                                    </button>
-                                )}
-                            </div>
 
                             {/* Launch Big Reveal Button */}
                             <button
@@ -547,7 +516,6 @@ const AdminDashboard = () => {
                                 className="btn-primary"
                                 style={{
                                     width: '100%',
-                                    marginTop: '16px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -561,7 +529,7 @@ const AdminDashboard = () => {
                                 }}
                             >
                                 <Star size={18} />
-                                {allGamesComplete ? 'Launch Big Reveal 🏆' : 'Complete all games first...'}
+                                {allGamesComplete ? 'Launch Big Reveal 🏆' : 'Complete all rounds first...'}
                             </button>
                         </div>
 
