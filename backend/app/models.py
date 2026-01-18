@@ -26,6 +26,7 @@ class User(BaseModel):
         self.phone = data.get('phone')
         self.password_hash = data.get('password_hash')
         self.google_id = data.get('google_id')
+        self.apple_id = data.get('apple_id')
         self.role = data.get('role', 'player') # 'admin' or 'player'
         self.is_proxy = data.get('is_proxy', False) # Created by admin, no device
         self.checked_in = data.get('checked_in', False)
@@ -53,6 +54,11 @@ class User(BaseModel):
     @classmethod
     def find_by_google_id(cls, mongo, google_id):
         data = mongo.db.users.find_one({"google_id": google_id})
+        return cls(data) if data else None
+
+    @classmethod
+    def find_by_apple_id(cls, mongo, apple_id):
+        data = mongo.db.users.find_one({"apple_id": apple_id})
         return cls(data) if data else None
 
     def save(self, mongo):

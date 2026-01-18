@@ -41,3 +41,10 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
     GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'https://bagsbrats-production.up.railway.app/auth/google/callback')
     FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://efficient-insight-production.up.railway.app')
+    
+    # Apple OAuth Config
+    APPLE_CLIENT_ID = os.environ.get('APPLE_CLIENT_ID')  # Services ID
+    APPLE_TEAM_ID = os.environ.get('APPLE_TEAM_ID')
+    APPLE_KEY_ID = os.environ.get('APPLE_KEY_ID')
+    APPLE_PRIVATE_KEY = os.environ.get('APPLE_PRIVATE_KEY')
+    APPLE_REDIRECT_URI = os.environ.get('APPLE_REDIRECT_URI', 'https://bagsbrats-production.up.railway.app/auth/apple/callback')
