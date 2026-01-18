@@ -52,7 +52,16 @@ const AdminDashboard = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const todayGames = res.data.filter(g => g.day_index === activeTournament.current_day_index);
-                const allFinalized = todayGames.length > 0 && todayGames.every(g => g.status === 'finalized');
+
+                // Check that all rounds have games (not just existing games are finalized)
+                const roundsPerDay = activeTournament.rounds_per_day || 3;
+                const roundsWithGames = new Set(todayGames.map(g => g.round));
+                const allRoundsHaveGames = roundsWithGames.size === roundsPerDay;
+
+                // All rounds must have games AND all games must be finalized
+                const allFinalized = todayGames.length > 0 &&
+                    allRoundsHaveGames &&
+                    todayGames.every(g => g.status === 'finalized');
                 setAllGamesComplete(allFinalized);
             } catch (err) {
                 console.error('Failed to check games status', err);
