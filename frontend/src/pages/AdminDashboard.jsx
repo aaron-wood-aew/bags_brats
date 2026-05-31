@@ -747,28 +747,53 @@ const AdminDashboard = () => {
                                 Once all rounds are complete, launch the dramatic podium reveal to announce the Golden Bag winner!
                             </p>
 
-                            {/* Launch Big Reveal Button */}
-                            <button
-                                onClick={() => navigate('/admin/reveal')}
-                                disabled={!allGamesComplete}
-                                className="btn-primary"
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    background: allGamesComplete ? 'linear-gradient(135deg, #fbbf24, #f59e0b)' : 'rgba(255,255,255,0.05)',
-                                    border: allGamesComplete ? 'none' : '1px solid var(--border)',
-                                    color: allGamesComplete ? '#1f2937' : 'var(--text-muted)',
-                                    fontWeight: '800',
-                                    cursor: allGamesComplete ? 'pointer' : 'not-allowed',
-                                    opacity: allGamesComplete ? 1 : 0.5
-                                }}
-                            >
-                                <Star size={18} />
-                                {allGamesComplete ? 'Launch Big Reveal 🏆' : 'Complete all rounds first...'}
-                            </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                {/* Launch Big Reveal Button */}
+                                <button
+                                    onClick={() => navigate('/admin/reveal')}
+                                    disabled={!allGamesComplete}
+                                    className="btn-primary"
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        background: allGamesComplete ? 'linear-gradient(135deg, #fbbf24, #f59e0b)' : 'rgba(255,255,255,0.05)',
+                                        border: allGamesComplete ? 'none' : '1px solid var(--border)',
+                                        color: allGamesComplete ? '#1f2937' : 'var(--text-muted)',
+                                        fontWeight: '800',
+                                        cursor: allGamesComplete ? 'pointer' : 'not-allowed',
+                                        opacity: allGamesComplete ? 1 : 0.5
+                                    }}
+                                >
+                                    <Star size={18} />
+                                    {allGamesComplete ? 'Launch Daily Big Reveal 🏆' : 'Complete daily rounds first...'}
+                                </button>
+
+                                {/* Launch Grand Champion Reveal Button */}
+                                <button
+                                    onClick={() => navigate('/admin/grand-reveal')}
+                                    disabled={!activeTournament}
+                                    className="btn-primary"
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        background: activeTournament ? 'linear-gradient(135deg, var(--brand-teal), #48abb3)' : 'rgba(255,255,255,0.05)',
+                                        border: activeTournament ? 'none' : '1px solid var(--border)',
+                                        color: activeTournament ? '#0a141a' : 'var(--text-muted)',
+                                        fontWeight: '800',
+                                        cursor: activeTournament ? 'pointer' : 'not-allowed',
+                                        opacity: activeTournament ? 1 : 0.5
+                                    }}
+                                >
+                                    <Trophy size={18} />
+                                    {activeTournament ? 'Launch Grand Champion Reveal 👑' : 'Create a tournament first...'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

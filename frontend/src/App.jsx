@@ -9,6 +9,7 @@ import SpectatorView from './pages/SpectatorView';
 import OAuthCallback from './pages/OAuthCallback';
 import UserSettings from './pages/UserSettings';
 import BigReveal from './pages/BigReveal';
+import GrandReveal from './pages/GrandReveal';
 import PrivateRoute from './components/PrivateRoute';
 
 // Set up global Axios interceptor to handle token expiration
@@ -68,6 +69,14 @@ const App = () => {
             element={
               <PrivateRoute requireAdmin>
                 <BigReveal />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/grand-reveal"
+            element={
+              <PrivateRoute requireAdmin>
+                <GrandReveal />
               </PrivateRoute>
             }
           />
