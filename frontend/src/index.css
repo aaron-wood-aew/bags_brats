@@ -228,3 +228,24 @@ input[type="number"] {
   -moz-appearance: textfield; /* Firefox */
   appearance: textfield;
 }
+
+/* Premium Toast Container responsive layout */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    bottom: auto !important;
+    top: 16px !important;
+    right: 16px !important;
+    left: 16px !important;
+  }
+}

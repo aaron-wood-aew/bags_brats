@@ -47,7 +47,7 @@ const CourtCard = ({ game }) => {
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', alignItems: 'center' }}>
                 <span style={{ fontSize: '18px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
-                    Court {game.court}
+                    Station {game.court || game.game_number}
                 </span>
 
                 {game.status === 'active' && (
@@ -141,7 +141,7 @@ const SpectatorView = () => {
                     <h1 className="vibrant-text" style={{ fontSize: '64px', fontWeight: '900', marginBottom: '8px', lineHeight: 1 }}>
                         {tournament?.name || "Bags & Brats"}
                     </h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '20px', letterSpacing: '0.05em' }}>LIVE COURT TRACKER</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '20px', letterSpacing: '0.05em' }}>LIVE STATION TRACKER</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--brand-teal)', display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-end' }}>

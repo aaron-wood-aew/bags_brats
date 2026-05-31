@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Play, Square, Activity, Check, Clock, Loader } from 'lucide-react';
 import API_URL from '../config';
+import { useToast } from '../context/ToastContext';
 
 /**
  * RoundManager - Displays round cards with status and controls
  * Shows each round with its current status and appropriate action buttons
  */
 const RoundManager = ({ tournament, onUpdate }) => {
+    const { showToast, confirm } = useToast();
     const [roundStatus, setRoundStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
@@ -46,14 +48,20 @@ const RoundManager = ({ tournament, onUpdate }) => {
             });
             fetchRoundStatus();
             if (onUpdate) onUpdate();
+            showToast(`Pairings generated for Round ${roundNumber}!`, "success");
         } catch (err) {
-            alert(err.response?.data?.error || "Failed to generate pairings");
+            showToast(err.response?.data?.error || "Failed to generate pairings", "error");
         }
         setActionLoading(null);
     };
 
     const handleStartRound = async (roundNumber) => {
-        if (!window.confirm(`Start Round ${roundNumber}? This will begin the 20-minute countdown for all games.`)) return;
+        if (!(await confirm({
+            title: `Start Round ${roundNumber}?`,
+            message: 'This will officially start all match cards for the round and begin the 20-minute countdown timer.',
+            confirmText: 'Start Round',
+            type: 'purple'
+        }))) return;
         setActionLoading(`start-${roundNumber}`);
         try {
             const token = localStorage.getItem('token');
@@ -65,14 +73,20 @@ const RoundManager = ({ tournament, onUpdate }) => {
             });
             fetchRoundStatus();
             if (onUpdate) onUpdate();
+            showToast(`Round ${roundNumber} has officially started! 🚀`, "success");
         } catch (err) {
-            alert(err.response?.data?.error || "Failed to start round");
+            showToast(err.response?.data?.error || "Failed to start round", "error");
         }
         setActionLoading(null);
     };
 
     const handleStopRound = async (roundNumber) => {
-        if (!window.confirm(`Stop Round ${roundNumber}? This will finalize all active games with their current scores.`)) return;
+        if (!(await confirm({
+            title: `Stop Round ${roundNumber}?`,
+            message: 'This will instantly finalize all remaining active games in this round with their current scores.',
+            confirmText: 'Stop Round',
+            type: 'purple'
+        }))) return;
         setActionLoading(`stop-${roundNumber}`);
         try {
             const token = localStorage.getItem('token');
@@ -84,8 +98,9 @@ const RoundManager = ({ tournament, onUpdate }) => {
             });
             fetchRoundStatus();
             if (onUpdate) onUpdate();
+            showToast(`Round ${roundNumber} finalized successfully! 🏁`, "success");
         } catch (err) {
-            alert(err.response?.data?.error || "Failed to stop round");
+            showToast(err.response?.data?.error || "Failed to stop round", "error");
         }
         setActionLoading(null);
     };

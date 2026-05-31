@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_URL from '../config';
 import SocketService from '../services/socket';
-import { Trophy, Activity, Edit2, Lock, Unlock, Clock, Save, Play, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
+import { Trophy, Activity, Edit2, Lock, Unlock, Clock, Save, Play, ChevronDown, ChevronUp, Calendar, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '../context/ToastContext';
 
 const AdminGameManagement = () => {
+    const { showToast, confirm } = useToast();
     const [games, setGames] = useState([]);
     const [tournament, setTournament] = useState(null);
     const [expandedSections, setExpandedSections] = useState({});
@@ -77,7 +79,7 @@ const AdminGameManagement = () => {
             setEditingGame(null);
             fetchGames();
         } catch (err) {
-            alert("Failed to update game");
+            showToast("Failed to update game", "error");
         }
     };
 
@@ -88,8 +90,34 @@ const AdminGameManagement = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchGames();
+            showToast("Game started successfully! 🎯", "success");
         } catch (err) {
-            alert("Failed to start game");
+            showToast("Failed to start game", "error");
+        }
+    };
+
+    const handleFinalizeGame = async (game) => {
+        const team1Str = game.team1_player_names?.join(' & ') || 'Team 1';
+        const team2Str = game.team2_player_names?.join(' & ') || 'Team 2';
+        
+        if (!(await confirm({
+            title: 'Finalize & End Game?',
+            message: `Are you sure you want to end the game on Station ${game.court || game.game_number} between ${team1Str} (${game.score1}) and ${team2Str} (${game.score2}) with its current scores?`,
+            confirmText: 'Finalize Game',
+            type: 'purple'
+        }))) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/admin/games/${game._id}`, {
+                status: 'finalized'
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchGames();
+            showToast(`Game on Station ${game.court || game.game_number} finalized successfully! 🏁`, "success");
+        } catch (err) {
+            showToast("Failed to finalize game", "error");
         }
     };
 
@@ -278,7 +306,7 @@ const AdminGameManagement = () => {
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                                         <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                            <Clock size={12} /> Court {game.court}
+                                                                            <Clock size={12} /> Station {game.court || game.game_number}
                                                                         </span>
                                                                         {game.status === 'active' && game.end_time && (
                                                                             <span style={{
@@ -397,6 +425,15 @@ const AdminGameManagement = () => {
                                                                                     onClick={() => handleStartGame(game._id)}
                                                                                 >
                                                                                     <Play size={14} style={{ marginRight: '6px' }} /> Start
+                                                                                </button>
+                                                                            )}
+                                                                            {game.status === 'active' && (
+                                                                                <button
+                                                                                    className="btn-primary"
+                                                                                    style={{ flex: 1, padding: '8px', fontSize: '12px', background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', border: 'none' }}
+                                                                                    onClick={() => handleFinalizeGame(game)}
+                                                                                >
+                                                                                    <Check size={14} style={{ marginRight: '6px' }} /> Finalize
                                                                                 </button>
                                                                             )}
                                                                             <button

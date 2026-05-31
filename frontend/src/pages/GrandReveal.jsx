@@ -227,7 +227,7 @@ const GrandReveal = () => {
                     <ArrowLeft size={20} />
                 </button>
                 <div>
-                    <h1 className="vibrant-text" style={{ fontSize: '32px', margin: 0, fontWeight: '800' }}>League Champions</h1>
+                    <h1 className="vibrant-text" style={{ fontSize: '32px', margin: 0, fontWeight: '800' }}>2026 Bags & Brats Grand Champions</h1>
                     <p style={{ color: 'var(--text-muted)', marginTop: '4px', fontSize: '13px' }}>Click each pedestal to crown the overall tournament winners</p>
                 </div>
             </div>
@@ -346,7 +346,7 @@ const GrandReveal = () => {
                                         letterSpacing: '0.15em'
                                     }}
                                 >
-                                    League Champion
+                                    Grand Champion
                                 </motion.div>
                             </motion.div>
                         )}
@@ -428,14 +428,14 @@ const GrandReveal = () => {
             <div style={{ textAlign: 'center', marginTop: '50px', color: 'var(--text-muted)', fontSize: '14px', position: 'relative', zIndex: 10 }}>
                 {!revealed.third && <p>🥉 Click **3rd place** to launch the reveal sequence...</p>}
                 {revealed.third && !revealed.second && <p>🥈 Now reveal **2nd place**...</p>}
-                {revealed.second && !revealed.first && <p style={{ color: '#fbbf24', fontWeight: '700' }}>👑 The moment of glory! Reveal the overall **League Champion**!</p>}
+                {revealed.second && !revealed.first && <p style={{ color: '#fbbf24', fontWeight: '700' }}>👑 The moment of glory! Reveal the overall **Grand Champion**!</p>}
                 {revealed.first && (
                     <motion.p
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         style={{ color: '#fbbf24', fontWeight: '900', fontSize: '16px' }}
                     >
-                        🎉 All hail today's Tournament Champions! Congratulations! 🎉
+                        🎉 Congratulations to our 2026 Bags & Brats Grand Champions! 🎉
                     </motion.p>
                 )}
             </div>

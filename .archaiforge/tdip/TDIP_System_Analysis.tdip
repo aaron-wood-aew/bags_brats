@@ -2,7 +2,7 @@
   "version": "7.0_UNIFIED",
   "tdip_id": "system-analysis-1780183081087",
   "depth_layer": 0,
-  "timestamp": "2026-05-31T16:35:29.499Z",
+  "timestamp": "2026-05-31T17:09:40.184Z",
   "state": {
     "identity": {
       "name": "Archaiforge",
@@ -227,7 +227,7 @@
       "mode": "BUILD",
       "last_outcomes": [],
       "current_task": "Active Task",
-      "last_active": "2026-05-31T16:35:29.505Z",
+      "last_active": "2026-05-31T17:09:40.191Z",
       "last_dwell": {
         "timestamp": "2026-05-30T23:18:01.092Z",
         "turn": 0,
@@ -237,13 +237,13 @@
       }
     },
     "metrics": {
-      "drift": 0,
+      "drift": 0.2929,
       "drift_threshold_warning": 0.3,
       "drift_threshold_critical": 0.5,
       "isd_confidence": null,
       "dwell_state": {
         "depth": 0,
-        "stability": 1,
+        "stability": 0.707,
         "last_checkpoint_turn": 0
       },
       "dwell_loops": 1,
@@ -251,9 +251,9 @@
       "generic_mins": 0,
       "archaiforge_mins": 0,
       "roi": 1,
-      "turn_count": 19,
+      "turn_count": 31,
       "boot_time_ms": 70,
-      "interactions": 2,
+      "interactions": 6,
       "metrics_source": "tdip"
     },
     "lineage": {
@@ -326,8 +326,8 @@
         "kind": "STATE_PROOF",
         "algo": "sha256",
         "canonicalization": "stableStringify-v1",
-        "hash_full": "2d14ff02e2cb24afb1489d0ada4fc0d1daebb04b5c6f2780e9b80050d59e2dbc",
-        "hash_short": "2d14ff02"
+        "hash_full": "ead58f5a85a9fea4da12f1c0112e3c4c796a7758b58c931c4f4c3016142c77f9",
+        "hash_short": "ead58f5a"
       },
       "embodied_journey": [],
       "inflection_waypoints": [],
@@ -570,16 +570,16 @@
   },
   "wormhole": {
     "can_resume": true,
-    "age": 2,
+    "age": 6,
     "topology_hash": "unknown"
   },
   "proof": {
     "kind": "STATE_PROOF",
     "algo": "sha256",
     "canonicalization": "stableStringify-v1",
-    "hash_full": "2d14ff02e2cb24afb1489d0ada4fc0d1daebb04b5c6f2780e9b80050d59e2dbc",
-    "hash_short": "2d14ff02"
+    "hash_full": "ead58f5a85a9fea4da12f1c0112e3c4c796a7758b58c931c4f4c3016142c77f9",
+    "hash_short": "ead58f5a"
   },
-  "proof_hash": "2d14ff02",
-  "proof_full_hash": "2d14ff02e2cb24afb1489d0ada4fc0d1daebb04b5c6f2780e9b80050d59e2dbc"
+  "proof_hash": "ead58f5a",
+  "proof_full_hash": "ead58f5a85a9fea4da12f1c0112e3c4c796a7758b58c931c4f4c3016142c77f9"
 }

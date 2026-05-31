@@ -9,9 +9,11 @@ import TournamentStandings from '../components/TournamentStandings';
 import RoundManager from '../components/RoundManager';
 import ThemeToggle from '../components/ThemeToggle';
 import API_URL from '../config';
+import { useToast } from '../context/ToastContext';
 
 
 const AdminDashboard = () => {
+    const { showToast, confirm } = useToast();
     const [activeTab, setActiveTab] = useState('controls');
     const [activeTournament, setActiveTournament] = useState(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
@@ -68,9 +70,10 @@ const AdminDashboard = () => {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            showToast("Daily backup CSV exported successfully!", "success");
         } catch (err) {
             console.error("Failed to download CSV", err);
-            alert("Failed to export daily record backup. Please check your connection.");
+            showToast("Failed to export daily record backup. Please check your connection.", "error");
         }
     };
 
@@ -88,7 +91,7 @@ const AdminDashboard = () => {
             }, 300);
         } catch (err) {
             console.error("Failed to load print preview", err);
-            alert("Failed to load daily record print layout. Please try again.");
+            showToast("Failed to load daily record print layout. Please try again.", "error");
         }
     };
 
@@ -148,7 +151,7 @@ const AdminDashboard = () => {
     const handleCreateTournament = async (e) => {
         e.preventDefault();
         if (selectedDates.length === 0) {
-            alert("Please select at least one date.");
+            showToast("Please select at least one date.", "warning");
             return;
         }
         try {
@@ -166,8 +169,9 @@ const AdminDashboard = () => {
             setRoundsPerDay(2);
             setSelectedDates([]);
             fetchActiveTournament();
+            showToast("Tournament created successfully! 🏆", "success");
         } catch (err) {
-            alert(err.response?.data?.error || "Failed to create tournament");
+            showToast(err.response?.data?.error || "Failed to create tournament", "error");
         }
     };
 
@@ -177,48 +181,64 @@ const AdminDashboard = () => {
             const res = await axios.post(`${API_URL}/admin/generate-pairings`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            alert("Pairings generated and broadcasted!");
+            showToast("Pairings generated and broadcasted! 🔄", "success");
         } catch (err) {
-            alert(err.response?.data?.error || "Failed to generate pairings");
+            showToast(err.response?.data?.error || "Failed to generate pairings", "error");
         }
     };
 
     const handleClearTournament = async () => {
-        if (!window.confirm("Delete ALL tournaments and games?")) return;
+        if (!(await confirm({
+            title: 'Clear Tournament Data?',
+            message: 'CRITICAL: This will permanently delete ALL tournaments and match logs from the database. This action is irreversible.',
+            confirmText: 'Clear Everything',
+            type: 'danger'
+        }))) return;
         try {
             const token = localStorage.getItem('token');
             await axios.delete(`${API_URL}/admin/tournaments/bulk-delete`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchActiveTournament();
+            showToast("All tournaments and matches cleared successfully.", "success");
         } catch (err) {
-            alert("Failed to clear tournament");
+            showToast("Failed to clear tournament", "error");
         }
     };
 
     const handleStartAllGames = async () => {
-        if (!window.confirm("This will start ALL upcoming games for the current round and begin the 20-minute countdown. Proceed?")) return;
+        if (!(await confirm({
+            title: 'Activate Gameday Pulse?',
+            message: 'This will start ALL upcoming games for the current round and begin the 20-minute countdown timer.',
+            confirmText: 'Start Games',
+            type: 'purple'
+        }))) return;
         try {
             const token = localStorage.getItem('token');
             await axios.post(`${API_URL}/admin/tournament/start-all`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            alert("Gameday pulse activated! All games started.");
+            showToast("Gameday pulse activated! All games started. 🚀", "success");
         } catch (err) {
-            alert(err.response?.data?.error || "Failed to start all games");
+            showToast(err.response?.data?.error || "Failed to start all games", "error");
         }
     };
 
     const handleStopAllGames = async () => {
-        if (!window.confirm("This will FINALIZE all active games with their current scores. Proceed?")) return;
+        if (!(await confirm({
+            title: 'Finalize All Games?',
+            message: 'This will instantly FINALIZE all active games with their current live scores. Proceed?',
+            confirmText: 'Finalize Games',
+            type: 'purple'
+        }))) return;
         try {
             const token = localStorage.getItem('token');
             const res = await axios.post(`${API_URL}/admin/tournament/stop-all`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            alert(res.data.msg || "All games finalized!");
+            showToast(res.data.msg || "All games finalized! 🏁", "success");
         } catch (err) {
-            alert(err.response?.data?.error || "Failed to stop games");
+            showToast(err.response?.data?.error || "Failed to stop games", "error");
         }
     };
 
@@ -691,10 +711,10 @@ const AdminDashboard = () => {
                                                     { check_in_open: !activeTournament.check_in_open },
                                                     { headers: { Authorization: `Bearer ${token}` } }
                                                 );
-                                                alert(res.data.msg);
+                                                showToast(res.data.msg, "success");
                                                 fetchActiveTournament();
                                             } catch (err) {
-                                                alert(err.response?.data?.error || 'Failed to toggle check-in');
+                                                showToast(err.response?.data?.error || 'Failed to toggle check-in', 'error');
                                             }
                                         }}
                                         className="btn-primary"

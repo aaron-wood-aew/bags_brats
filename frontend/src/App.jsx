@@ -11,6 +11,7 @@ import UserSettings from './pages/UserSettings';
 import BigReveal from './pages/BigReveal';
 import GrandReveal from './pages/GrandReveal';
 import PrivateRoute from './components/PrivateRoute';
+import { ToastProvider, showGlobalToast } from './context/ToastContext';
 
 // Set up global Axios interceptor to handle token expiration
 axios.interceptors.response.use(
@@ -23,8 +24,8 @@ axios.interceptors.response.use(
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         
-        // Gracefully notify and redirect
-        alert("Your session has expired. Please log in again.");
+        // Gracefully notify and redirect using custom global toast
+        showGlobalToast("Your session has expired. Please log in again.", "error");
         window.location.href = '/login';
       }
     }
@@ -35,55 +36,57 @@ axios.interceptors.response.use(
 const App = () => {
   return (
     <Router>
-      <div style={{ minHeight: '100vh', padding: '20px' }}>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/oauth-callback" element={<OAuthCallback />} />
-          <Route
-            path="/settings"
-            element={
-              <PrivateRoute>
-                <UserSettings />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <PlayerDashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <PrivateRoute requireAdmin>
-                <AdminDashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/admin/reveal"
-            element={
-              <PrivateRoute requireAdmin>
-                <BigReveal />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/admin/grand-reveal"
-            element={
-              <PrivateRoute requireAdmin>
-                <GrandReveal />
-              </PrivateRoute>
-            }
-          />
-          <Route path="/spectator" element={<SpectatorView />} />
-          <Route path="/" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </div>
+      <ToastProvider>
+        <div style={{ minHeight: '100vh', padding: '20px' }}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/oauth-callback" element={<OAuthCallback />} />
+            <Route
+              path="/settings"
+              element={
+                <PrivateRoute>
+                  <UserSettings />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <PlayerDashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute requireAdmin>
+                  <AdminDashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/reveal"
+              element={
+                <PrivateRoute requireAdmin>
+                  <BigReveal />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/grand-reveal"
+              element={
+                <PrivateRoute requireAdmin>
+                  <GrandReveal />
+                </PrivateRoute>
+              }
+            />
+            <Route path="/spectator" element={<SpectatorView />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </div>
+      </ToastProvider>
     </Router>
   );
 };

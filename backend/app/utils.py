@@ -229,7 +229,8 @@ def generate_round_pairings(mongo, tournament_id, day_index, round_number):
                 "team1_player_ids": power_team.player_ids,
                 "team2_player_ids": normal_team.player_ids,
                 "status": "upcoming",
-                "is_power_game": True
+                "is_power_game": True,
+                "court": game_number # Assign default Station matching game number
             })
             game.save(mongo)
             
@@ -278,7 +279,8 @@ def generate_round_pairings(mongo, tournament_id, day_index, round_number):
                 "team1_player_ids": team1.player_ids,
                 "team2_player_ids": team2.player_ids,
                 "status": "upcoming",
-                "is_power_game": False
+                "is_power_game": False,
+                "court": game_number # Assign default Station matching game number
             })
             game.save(mongo)
             

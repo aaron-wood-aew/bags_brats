@@ -44,7 +44,7 @@ test.describe('Tournament Lifecycle Smoke Test', () => {
 
         // 6. Verify Timer appearance on Admin Live Games
         await page.click('button:has-text("Live Games")');
-        await expect(page.locator('.glass-card:has-text("Court") >> text=active')).toBeVisible();
+        await expect(page.locator('.glass-card:has-text("Station") >> text=active')).toBeVisible();
 
         // 7. Verify Player Dashboard View (Switch to player view)
         await page.click('text=Player View');

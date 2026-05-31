@@ -3,8 +3,10 @@ import axios from 'axios';
 import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key, ArrowUpDown, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
 import API_URL from '../config';
+import { useToast } from '../context/ToastContext';
 
 const AdminUserManagement = () => {
+    const { showToast, confirm } = useToast();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [sortField, setSortField] = useState('name');
@@ -62,21 +64,28 @@ const AdminUserManagement = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchUsers();
+            showToast("Database seeded successfully with demo players! 👥", "success");
         } catch (err) {
-            alert("Seeding failed");
+            showToast("Seeding failed", "error");
         }
     };
 
     const handleBulkDelete = async () => {
-        if (!window.confirm("CRITICAL: This will delete ALL players except you. Proceed?")) return;
+        if (!(await confirm({
+            title: 'Bulk Delete Players?',
+            message: 'CRITICAL: This will permanently delete ALL players and match schedules from the database, except for your admin account. Proceed?',
+            confirmText: 'Delete All',
+            type: 'danger'
+        }))) return;
         try {
             const token = localStorage.getItem('token');
             await axios.delete(`${API_URL}/admin/users/bulk-delete`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchUsers();
+            showToast("All players successfully deleted.", "success");
         } catch (err) {
-            alert("Bulk delete failed");
+            showToast("Bulk delete failed", "error");
         }
     };
 
@@ -111,7 +120,12 @@ const AdminUserManagement = () => {
     };
 
     const deleteUser = async (userId) => {
-        if (!window.confirm("Are you sure you want to delete this player?")) return;
+        if (!(await confirm({
+            title: 'Delete Player?',
+            message: 'Are you sure you want to permanently delete this player? They will be removed from all active rosters and standings.',
+            confirmText: 'Delete',
+            type: 'danger'
+        }))) return;
         try {
             const token = localStorage.getItem('token');
             await axios.delete(`${API_URL}/admin/users/${userId}`, {
@@ -151,7 +165,7 @@ const AdminUserManagement = () => {
         const newPassword = prompt(`Enter new password for ${userName} (min 6 characters):`);
         if (!newPassword) return;
         if (newPassword.length < 6) {
-            alert('Password must be at least 6 characters');
+            showToast('Password must be at least 6 characters', 'warning');
             return;
         }
         try {
@@ -159,9 +173,9 @@ const AdminUserManagement = () => {
             await axios.put(`${API_URL}/admin/users/${userId}/reset-password`, { new_password: newPassword }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            alert(`Password reset for ${userName}`);
+            showToast(`Password successfully reset for ${userName}! 🔑`, 'success');
         } catch (err) {
-            alert(err.response?.data?.error || 'Failed to reset password');
+            showToast(err.response?.data?.error || 'Failed to reset password', 'error');
         }
     };
 

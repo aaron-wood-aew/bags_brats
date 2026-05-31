@@ -254,6 +254,24 @@ const PlayerDashboard = () => {
                         </div>
                     )}
 
+                    {/* Station Indicator */}
+                    <div style={{ 
+                        marginBottom: '24px', 
+                        display: 'inline-block',
+                        background: 'rgba(139, 92, 246, 0.08)',
+                        border: '1px solid rgba(139, 92, 246, 0.2)',
+                        padding: '6px 16px',
+                        borderRadius: '20px',
+                        fontSize: '13px',
+                        fontWeight: '800',
+                        color: '#a78bfa',
+                        boxShadow: '0 0 15px rgba(139, 92, 246, 0.15)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        Station {currentGame.court || currentGame.game_number || "—"}
+                    </div>
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <div style={{ flex: 1 }}>
                             <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Your Team</p>
@@ -701,9 +719,25 @@ const PlayerDashboard = () => {
                                 transition: 'all 0.5s ease'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', justifyContent: 'space-between' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                                         <Users size={24} style={{ color: 'var(--brand-teal)' }} />
-                                        <h3 style={{ fontSize: '20px' }}>Your Session</h3>
+                                        <h3 style={{ fontSize: '20px', fontWeight: '800' }}>Your Session</h3>
+                                        {currentGame && (
+                                            <span style={{
+                                                fontSize: '11px',
+                                                textTransform: 'uppercase',
+                                                padding: '2px 8px',
+                                                borderRadius: '20px',
+                                                background: 'rgba(139, 92, 246, 0.1)',
+                                                border: '1px solid rgba(139, 92, 246, 0.3)',
+                                                color: '#a78bfa',
+                                                fontWeight: '800',
+                                                boxShadow: '0 0 10px rgba(139, 92, 246, 0.1)',
+                                                marginLeft: '4px'
+                                            }}>
+                                                Station {currentGame.court || currentGame.game_number}
+                                            </span>
+                                        )}
                                     </div>
                                     {currentGame?.status === 'active' && (
                                         <div style={{

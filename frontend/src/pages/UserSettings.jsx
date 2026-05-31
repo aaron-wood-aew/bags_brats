@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Lock, Phone, Mail, Save, Check, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import API_URL from '../config';
+import { useToast } from '../context/ToastContext';
 
 const UserSettings = () => {
     const navigate = useNavigate();
+    const { showToast, confirm } = useToast();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -290,15 +292,21 @@ const UserSettings = () => {
 
                         <button
                             onClick={async () => {
-                                if (!window.confirm('Become a Power Player? This choice is permanent and shows you are willing to play solo when needed.')) return;
+                                if (!(await confirm({
+                                    title: 'Become a Power Player?',
+                                    message: 'This choice is permanent and shows you are willing to play solo when needed.',
+                                    confirmText: 'Become Power Player',
+                                    type: 'purple'
+                                }))) return;
                                 try {
                                     await axios.put(`${API_URL}/user/power-player`,
                                         {},
                                         { headers: { Authorization: `Bearer ${token}` } }
                                     );
                                     fetchUser();
+                                    showToast('Successfully registered as a Power Player! ⚡', 'success');
                                 } catch (err) {
-                                    alert(err.response?.data?.error || 'Failed to opt in');
+                                    showToast(err.response?.data?.error || 'Failed to opt in', 'error');
                                 }
                             }}
                             className="btn-primary"
