@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
+import API_URL from '../config';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
+const SOCKET_URL = API_URL;
 
 class SocketService {
     constructor() {

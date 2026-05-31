@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star } from 'lucide-react';
+import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star, FileText, Download, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminProxyRegister from '../components/AdminProxyRegister';
 import AdminUserManagement from '../components/AdminUserManagement';
@@ -10,17 +10,88 @@ import RoundManager from '../components/RoundManager';
 import ThemeToggle from '../components/ThemeToggle';
 import API_URL from '../config';
 
+
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('controls');
     const [activeTournament, setActiveTournament] = useState(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [tournamentName, setTournamentName] = useState('');
-    const [roundsPerDay, setRoundsPerDay] = useState(3);
+    const [roundsPerDay, setRoundsPerDay] = useState(2);
     const [selectedDates, setSelectedDates] = useState([]); // Array of YYYY-MM-DD
     const [viewDate, setViewDate] = useState(new Date()); // Controls which month we see
     const [selectedDayIndex, setSelectedDayIndex] = useState(null); // For day tabs navigation
     const [allGamesComplete, setAllGamesComplete] = useState(false);
     const navigate = useNavigate();
+    const [backupData, setBackupData] = useState(null);
+    const [backupDayIndex, setBackupDayIndex] = useState(0);
+
+    // Sync backupDayIndex with tournament's current day upon load
+    useEffect(() => {
+        if (activeTournament) {
+            setBackupDayIndex(activeTournament.current_day_index || 0);
+        }
+    }, [activeTournament]);
+
+
+    const handleDownloadCSV = async (dayIndex) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/admin/tournament/daily-backup?day_index=${dayIndex}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = res.data;
+            
+            // Build CSV rows
+            const csvRows = [];
+            // Header information
+            csvRows.push(`"Bags & Brats Cornhole Tournament Day ${data.day_number} Record Backup"`);
+            csvRows.push(`"Date: ${data.date}"`);
+            csvRows.push(`"Exported: ${new Date().toLocaleString()}"`);
+            csvRows.push(""); // Empty line
+            
+            // Table headers
+            csvRows.push("Rank,Player Name,Round 1,Round 2,Day Wins,Day Points,Aggregate Wins,Aggregate Games Played,Aggregate Points");
+            
+            // Table rows
+            data.players.forEach((p, idx) => {
+                const r1 = p.daily_scores[0]?.score || "-";
+                const r2 = p.daily_scores[1]?.score || "-";
+                csvRows.push(`${idx + 1},"${p.name}",${r1},${r2},${p.daily_wins},${p.daily_points},${p.aggregate_wins},${p.aggregate_games_played},${p.aggregate_points}`);
+            });
+            
+            // Trigger browser download via blob
+            const blob = new Blob([csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `bags_brats_day_${dayIndex + 1}_backup.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (err) {
+            console.error("Failed to download CSV", err);
+            alert("Failed to export daily record backup. Please check your connection.");
+        }
+    };
+
+    const handlePrintPDF = async (dayIndex) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/admin/tournament/daily-backup?day_index=${dayIndex}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setBackupData(res.data);
+            
+            // Give DOM time to render the hidden printable component before triggering print
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        } catch (err) {
+            console.error("Failed to load print preview", err);
+            alert("Failed to load daily record print layout. Please try again.");
+        }
+    };
+
 
     const fetchActiveTournament = async () => {
         try {
@@ -54,8 +125,8 @@ const AdminDashboard = () => {
                 const todayGames = res.data.filter(g => g.day_index === activeTournament.current_day_index);
 
                 // Check that all rounds have games (not just existing games are finalized)
-                const roundsPerDay = activeTournament.rounds_per_day || 3;
-                const roundsWithGames = new Set(todayGames.map(g => g.round));
+                const roundsPerDay = activeTournament.rounds_per_day || 2;
+                const roundsWithGames = new Set(todayGames.map(g => g.round_number));
                 const allRoundsHaveGames = roundsWithGames.size === roundsPerDay;
 
                 // All rounds must have games AND all games must be finalized
@@ -92,7 +163,7 @@ const AdminDashboard = () => {
 
             setShowCreateForm(false);
             setTournamentName('');
-            setRoundsPerDay(3);
+            setRoundsPerDay(2);
             setSelectedDates([]);
             fetchActiveTournament();
         } catch (err) {
@@ -180,10 +251,12 @@ const AdminDashboard = () => {
                     <h2 className="vibrant-text" style={{ fontSize: '36px' }}>Director Control Center</h2>
                     <div style={{ display: 'flex', gap: '8px', marginTop: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', overflowX: 'auto' }}>
                         <TabButton id="controls" icon={Sliders} label="Controls" />
+                        <TabButton id="tournaments" icon={Calendar} label="Tournaments" />
                         <TabButton id="overview" icon={Trophy} label="Overview" />
                         <TabButton id="roster" icon={Users} label="Global Roster" />
                         <TabButton id="games" icon={Activity} label="Live Games" />
                     </div>
+
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <ThemeToggle />
@@ -228,6 +301,125 @@ const AdminDashboard = () => {
             <div style={{ marginTop: '24px' }}>
                 {activeTab === 'controls' && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                        {/* Admin Proxy Registration */}
+                        <div>
+                            <AdminProxyRegister />
+                        </div>
+
+                        {/* Tournament Data Backup */}
+                        <div className="glass-card" style={{ padding: '32px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                                <FileText size={20} style={{ color: 'var(--brand-teal)' }} />
+                                <h3 style={{ fontSize: '22px' }}>Tournament Data Backup</h3>
+                            </div>
+                            
+                            {!activeTournament ? (
+                                <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+                                    Active tournament required to download or save backups.
+                                </p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.5' }}>
+                                        Export player standings and round scores for manual/offline record keeping. Select a tournament day to export:
+                                    </p>
+                                    
+                                    {/* Day Selection Row */}
+                                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+                                        {activeTournament.dates.map((date, idx) => {
+                                            const isSelected = idx === backupDayIndex;
+                                            const displayDate = new Date(date + 'T12:00:00');
+                                            const dayName = displayDate.toLocaleDateString('en-US', { weekday: 'short' });
+                                            const dayNum = displayDate.getDate();
+                                            const isDisabled = idx > activeTournament.current_day_index;
+
+                                            return (
+                                                <button
+                                                    key={date}
+                                                    type="button"
+                                                    onClick={() => setBackupDayIndex(idx)}
+                                                    disabled={isDisabled}
+                                                    style={{
+                                                        padding: '10px 14px',
+                                                        borderRadius: '8px',
+                                                        background: isSelected ? 'var(--brand-teal)' : 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid transparent',
+                                                        color: isDisabled ? 'rgba(255,255,255,0.15)' : (isSelected ? 'white' : 'var(--text-muted)'),
+                                                        cursor: isDisabled ? 'not-allowed' : 'pointer',
+                                                        fontSize: '12px',
+                                                        fontWeight: '700',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        minWidth: '55px',
+                                                        transition: 'all 0.2s',
+                                                        opacity: isDisabled ? 0.3 : 1
+                                                    }}
+                                                >
+                                                    <span style={{ fontSize: '10px', textTransform: 'uppercase' }}>{dayName}</span>
+                                                    <span style={{ fontSize: '16px', fontWeight: '800' }}>{dayNum}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    
+                                    <div className="glass-card" style={{ padding: '16px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                            <FileText size={16} style={{ color: 'var(--brand-teal)' }} />
+                                            <span style={{ fontSize: '14px', fontWeight: '700' }}>Day {backupDayIndex + 1} Record Backup</span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button
+                                                onClick={() => handleDownloadCSV(backupDayIndex)}
+                                                style={{
+                                                    flex: 1,
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    color: 'var(--text)',
+                                                    border: '1px solid var(--border)',
+                                                    padding: '10px 14px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '12px',
+                                                    fontWeight: '700',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '6px'
+                                                }}
+                                            >
+                                                <Download size={14} />
+                                                Download CSV
+                                            </button>
+                                            <button
+                                                onClick={() => handlePrintPDF(backupDayIndex)}
+                                                style={{
+                                                    flex: 1,
+                                                    background: 'linear-gradient(135deg, var(--brand-teal), #48abb3)',
+                                                    color: '#0a141a',
+                                                    border: 'none',
+                                                    padding: '10px 14px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '12px',
+                                                    fontWeight: '700',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '6px'
+                                                }}
+                                            >
+                                                <Printer size={14} />
+                                                Print / PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'tournaments' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
 
                         {/* Tournament Creation / Status */}
                         <div className="glass-card" style={{ padding: '32px' }}>
@@ -256,24 +448,68 @@ const AdminDashboard = () => {
                                             required
                                         />
 
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <label style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Rounds per day:</label>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                max="10"
-                                                value={roundsPerDay}
-                                                onChange={(e) => setRoundsPerDay(parseInt(e.target.value) || 3)}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.05)',
-                                                    border: '1px solid var(--border)',
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--border)', minHeight: '48px' }}>
+                                            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Rounds per day:</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setRoundsPerDay(Math.max(1, roundsPerDay - 1))}
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.05)',
+                                                        border: '1px solid var(--border)',
+                                                        color: 'white',
+                                                        width: '28px',
+                                                        height: '28px',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: '15px',
+                                                        fontWeight: '700',
+                                                        transition: 'all 0.2s ease',
+                                                        userSelect: 'none'
+                                                    }}
+                                                    onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                                                    onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.05)'}
+                                                >
+                                                    -
+                                                </button>
+                                                <span style={{
                                                     color: 'white',
-                                                    padding: '10px',
-                                                    borderRadius: '8px',
-                                                    width: '70px',
-                                                    textAlign: 'center'
-                                                }}
-                                            />
+                                                    width: '24px',
+                                                    textAlign: 'center',
+                                                    fontSize: '14px',
+                                                    fontWeight: '700',
+                                                    userSelect: 'none'
+                                                }}>
+                                                    {roundsPerDay}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setRoundsPerDay(Math.min(10, roundsPerDay + 1))}
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.05)',
+                                                        border: '1px solid var(--border)',
+                                                        color: 'white',
+                                                        width: '28px',
+                                                        height: '28px',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: '15px',
+                                                        fontWeight: '700',
+                                                        transition: 'all 0.2s ease',
+                                                        userSelect: 'none'
+                                                    }}
+                                                    onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                                                    onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.05)'}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div style={{ marginBottom: '8px' }}>
@@ -287,8 +523,8 @@ const AdminDashboard = () => {
                                                     }} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                                                         <ChevronLeft size={16} />
                                                     </button>
-                                                    <span style={{ fontSize: '12px', fontWeight: '700', minWidth: '80px', textAlign: 'center' }}>
-                                                        {viewDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                                    <span style={{ fontSize: '13px', fontWeight: '700' }}>
+                                                        {viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                                                     </span>
                                                     <button type="button" onClick={() => {
                                                         const d = new Date(viewDate);
@@ -353,7 +589,7 @@ const AdminDashboard = () => {
                                                     return days;
                                                 })()}
                                             </div>
-                                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center' }}>
+                                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center' }}>
                                                 {selectedDates.length} days selected
                                             </p>
                                         </div>
@@ -378,7 +614,6 @@ const AdminDashboard = () => {
                                             const isSelected = idx === (selectedDayIndex ?? activeTournament.current_day_index);
                                             const isCurrent = idx === activeTournament.current_day_index;
                                             const isPast = idx < activeTournament.current_day_index;
-                                            const isFuture = idx > activeTournament.current_day_index;
 
                                             const displayDate = new Date(date + 'T12:00:00');
                                             const dayName = displayDate.toLocaleDateString('en-US', { weekday: 'short' });
@@ -391,10 +626,12 @@ const AdminDashboard = () => {
                                                     style={{
                                                         padding: '10px 16px',
                                                         borderRadius: '8px',
-                                                        border: isSelected ? '2px solid var(--brand-teal)' : '1px solid var(--border)',
-                                                        background: isSelected ? 'var(--brand-teal-glow)' : 'rgba(255,255,255,0.02)',
-                                                        color: isSelected ? 'var(--brand-teal)' : isPast ? 'var(--text-muted)' : 'white',
+                                                        background: isSelected ? 'var(--brand-teal)' : 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid transparent',
+                                                        color: isSelected ? 'white' : 'var(--text-muted)',
                                                         cursor: 'pointer',
+                                                        fontSize: '13px',
+                                                        fontWeight: '700',
                                                         display: 'flex',
                                                         flexDirection: 'column',
                                                         alignItems: 'center',
@@ -422,6 +659,7 @@ const AdminDashboard = () => {
                                                     )}
                                                 </button>
                                             );
+
                                         })}
                                     </div>
 
@@ -532,11 +770,6 @@ const AdminDashboard = () => {
                                 {allGamesComplete ? 'Launch Big Reveal 🏆' : 'Complete all rounds first...'}
                             </button>
                         </div>
-
-                        {/* Proxy Registration Inline */}
-                        <div style={{ gridColumn: 'span 2' }}>
-                            <AdminProxyRegister />
-                        </div>
                     </div>
                 )}
 
@@ -547,9 +780,60 @@ const AdminDashboard = () => {
                 )}
                 {activeTab === 'roster' && <AdminUserManagement />}
                 {activeTab === 'games' && <AdminGameManagement />}
+            {backupData && (
+                <div className="printable-backup-sheet" style={{ display: 'none' }}>
+                    <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '20px' }}>
+                        <h1 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: '#000000' }}>
+                            {backupData.tournament_name}
+                        </h1>
+                        <h2 style={{ fontSize: '16px', fontWeight: '700', margin: '5px 0 0 0', color: '#000000' }}>
+                            Day {backupData.day_number} Backup & Standings Record
+                        </h2>
+                        <div style={{ fontSize: '11px', color: '#555555', marginTop: '5px' }}>
+                            Date: {backupData.date} • Exported: {new Date().toLocaleString()}
+                        </div>
+                    </div>
+
+                    <table className="backup-print-table">
+                        <thead>
+                            <tr>
+                                <th style={{ width: '6%', textAlign: 'center' }}>Rank</th>
+                                <th>Player Name</th>
+                                <th className="text-center" style={{ width: '15%' }}>Round 1</th>
+                                <th className="text-center" style={{ width: '15%' }}>Round 2</th>
+                                <th className="text-center" style={{ width: '10%' }}>Day W</th>
+                                <th className="text-center" style={{ width: '10%' }}>Day Pts</th>
+                                <th className="text-center" style={{ width: '12%' }}>Agg W</th>
+                                <th className="text-center" style={{ width: '12%' }}>Agg Games</th>
+                                <th className="text-center" style={{ width: '10%' }}>Agg Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {backupData.players.map((p, idx) => (
+                                <tr key={p.user_id}>
+                                    <td className="text-center" style={{ fontWeight: 'bold' }}>{idx + 1}</td>
+                                    <td style={{ fontWeight: '600' }}>{p.name}</td>
+                                    <td className="text-center">{p.daily_scores[0]?.score || '-'}</td>
+                                    <td className="text-center">{p.daily_scores[1]?.score || '-'}</td>
+                                    <td className="text-center" style={{ fontWeight: 'bold' }}>{p.daily_wins}</td>
+                                    <td className="text-center">{p.daily_points}</td>
+                                    <td className="text-center" style={{ fontWeight: 'bold' }}>{p.aggregate_wins}</td>
+                                    <td className="text-center">{p.aggregate_games_played}</td>
+                                    <td className="text-center">{p.aggregate_points}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    
+                    <div style={{ marginTop: '30px', fontSize: '10px', color: '#666666', fontStyle: 'italic', textAlign: 'center' }}>
+                        * Keep this sheet secure. It contains accurate round standings to run remaining dates manually if needed.
+                    </div>
+                </div>
+            )}
             </div>
         </div>
     );
 };
+
 
 export default AdminDashboard;

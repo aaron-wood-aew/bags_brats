@@ -34,6 +34,7 @@ class User(BaseModel):
         self.is_power_player = data.get('is_power_player', False)
         self.power_player_used = data.get('power_player_used', False)  # Reset when all power players used
         self.has_paid = data.get('has_paid', False)  # Entry fee paid for current tournament
+        self.attendance_schedule = data.get('attendance_schedule', {})
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -84,7 +85,7 @@ class Tournament(BaseModel):
         self.status = data.get('status', 'upcoming')
         self.current_day_index = data.get('current_day_index', 0)
         self.current_round = data.get('current_round', 0)  # 0 = no rounds started
-        self.rounds_per_day = data.get('rounds_per_day', 3)  # Number of rounds per day
+        self.rounds_per_day = data.get('rounds_per_day', 2)  # Number of rounds per day
         self.start_times = data.get('start_times', []) # List of ISO time strings for each date
 
     @classmethod

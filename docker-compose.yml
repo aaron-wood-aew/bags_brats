@@ -24,6 +24,7 @@ services:
   frontend:
     build: ./frontend
     container_name: bags_brats_frontend
+    command: npm run dev
     ports:
       - "5173:5173"
     depends_on:

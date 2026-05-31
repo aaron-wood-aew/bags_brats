@@ -1,14 +1,13 @@
 {
-  "archaiforge_version": "6.5.0-beta",
+  "archaiforge_version": "desktop-1.0",
   "project": {
     "name": "bags_brats"
   },
   "environment": {
-    "mode": "antigravity_companion"
+    "mode": "desktop_mcp"
   },
   "initialized": "2025-12-30T20:26:09.964Z",
-  "context_path": "/Users/Aaron/projects/archaiforge/context",
-  "last_updated": "2026-01-13T01:28:17.692Z",
+  "last_updated": "2026-05-30T23:06:00.000Z",
   "update_history": [
     {
       "from_version": "3.0.0-beta",
@@ -24,6 +23,12 @@
       "from_version": "6.0.0-beta",
       "to_version": "6.5.0-beta",
       "updated_at": "2026-01-13T01:28:17.692Z"
+    },
+    {
+      "from_version": "6.5.0-beta",
+      "to_version": "desktop-1.0",
+      "updated_at": "2026-05-30T23:06:00.000Z",
+      "notes": "Migrated from CLI-era to Archaiforge Desktop MCP. Archived legacy context, extensions, heartbeat, reflex, vectors directories. Removed .clinerules/.cursorrules/.windsurfrules protocol relay files."
     }
   ]
 }

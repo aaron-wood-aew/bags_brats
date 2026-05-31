@@ -235,6 +235,34 @@ def opt_in_power_player():
     user.save(mongo)
     return jsonify({"msg": "Welcome to the Power Player club! ⚡"}), 200
 
+@bp.route('/user/schedule', methods=['PUT'])
+@jwt_required()
+def update_schedule():
+    """Update player's planned attendance schedule"""
+    user_id = get_jwt_identity()
+    user = User.find_by_id(mongo, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+        
+    data = request.json
+    date = data.get('date')
+    status = data.get('status') # True (present), False (absent), None (undecided)
+    
+    if not date:
+        return jsonify({"error": "Date required"}), 400
+        
+    if not hasattr(user, 'attendance_schedule') or user.attendance_schedule is None:
+        user.attendance_schedule = {}
+        
+    if status is None:
+        user.attendance_schedule.pop(date, None)
+    else:
+        user.attendance_schedule[date] = bool(status)
+        
+    user.save(mongo)
+    return jsonify({"msg": "Schedule updated successfully", "attendance_schedule": user.attendance_schedule}), 200
+
+
 @bp.route('/admin/proxy-register', methods=['POST'])
 @jwt_required()
 def proxy_register():
@@ -413,6 +441,157 @@ def get_standings():
     )
     
     return jsonify(sorted_standings), 200
+
+
+@bp.route('/admin/tournament/daily-backup', methods=['GET'])
+@jwt_required()
+def get_daily_backup():
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"error": "No active tournament"}), 404
+
+    day_index = request.args.get('day_index', tournament.current_day_index, type=int)
+
+    # 1. Fetch all finalized games in this tournament to compute aggregate standings
+    all_finalized_games = list(mongo.db.games.find({
+        "tournament_id": str(tournament._id),
+        "status": "finalized"
+    }))
+
+    # 2. Get all players (users with role 'player')
+    all_users = list(mongo.db.users.find())
+    users_dict = {str(u['_id']): User(u) for u in all_users}
+
+    # Initialize players backup records
+    players_data = {}
+    for uid, user in users_dict.items():
+        if user.role == 'player':
+            players_data[uid] = {
+                "user_id": uid,
+                "name": user.name,
+                "daily_scores": [],
+                "daily_wins": 0,
+                "daily_points": 0,
+                "aggregate_wins": 0,
+                "aggregate_games_played": 0,
+                "aggregate_points": 0
+            }
+
+    # Calculate aggregate stats from all finalized games
+    for game in all_finalized_games:
+        win_ids = []
+        if game['score1'] > game['score2']:
+            win_ids = [str(pid) for pid in game['team1_player_ids']]
+        elif game['score2'] > game['score1']:
+            win_ids = [str(pid) for pid in game['team2_player_ids']]
+
+        team1_pids = [str(pid) for pid in game['team1_player_ids']]
+        team2_pids = [str(pid) for pid in game['team2_player_ids']]
+
+        for pid in team1_pids + team2_pids:
+            if pid in players_data:
+                players_data[pid]["aggregate_games_played"] += 1
+                if pid in team1_pids:
+                    players_data[pid]["aggregate_points"] += game['score1']
+                else:
+                    players_data[pid]["aggregate_points"] += game['score2']
+
+                if pid in win_ids:
+                    players_data[pid]["aggregate_wins"] += 1
+
+    # Calculate daily scores round-by-round for the selected day_index
+    rounds_count = tournament.rounds_per_day or 2
+
+    # Fetch finalized games specifically for this day_index
+    daily_games = list(mongo.db.games.find({
+        "tournament_id": str(tournament._id),
+        "day_index": day_index,
+        "status": "finalized"
+    }))
+
+    for uid, player in players_data.items():
+        daily_scores = []
+        for r in range(1, rounds_count + 1):
+            # Find the game for this player in round r on this day
+            game = None
+            for g in daily_games:
+                if g['round_number'] == r:
+                    team1_pids = [str(pid) for pid in g['team1_player_ids']]
+                    team2_pids = [str(pid) for pid in g['team2_player_ids']]
+                    if uid in team1_pids or uid in team2_pids:
+                        game = g
+                        break
+
+            if game:
+                team1_pids = [str(pid) for pid in game['team1_player_ids']]
+                if uid in team1_pids:
+                    own_score = game['score1']
+                    opp_score = game['score2']
+                else:
+                    own_score = game['score2']
+                    opp_score = game['score1']
+
+                won = own_score > opp_score
+                score_str = f"{own_score}-{opp_score}"
+                if won:
+                    player["daily_wins"] += 1
+                player["daily_points"] += own_score
+
+                daily_scores.append({
+                    "round": r,
+                    "score": score_str,
+                    "win": won,
+                    "played": True
+                })
+            else:
+                daily_scores.append({
+                    "round": r,
+                    "score": "-",
+                    "win": False,
+                    "played": False
+                })
+        player["daily_scores"] = daily_scores
+
+    # Filter out users who have not played at all in the tournament AND didn't check in or play on this day
+    active_players = []
+    for uid, player in players_data.items():
+        user_obj = users_dict[uid]
+        is_checked_in = getattr(user_obj, 'checked_in', False)
+        played_today = any(s['played'] for s in player['daily_scores'])
+        
+        if player["aggregate_games_played"] > 0 or played_today or is_checked_in:
+            active_players.append(player)
+
+    # Sort players by aggregate standings: Wins descending, then Games Played ascending, then Points descending
+    sorted_players = sorted(
+        active_players,
+        key=lambda x: (x['aggregate_wins'], -x['aggregate_games_played'], x['aggregate_points']),
+        reverse=True
+    )
+
+    # Get tournament day date
+    date_str = "Unknown Date"
+    if day_index < len(tournament.dates):
+        date_str = tournament.dates[day_index]
+        try:
+            dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            date_str = dt.strftime("%B %d, %Y")
+        except Exception:
+            pass
+
+    return jsonify({
+        "tournament_name": tournament.name or "Bags & Brats Tournament",
+        "day_number": day_index + 1,
+        "date": date_str,
+        "rounds_per_day": rounds_count,
+        "players": sorted_players
+    }), 200
+
 
 @bp.route('/admin/generate-pairings', methods=['POST'])
 @jwt_required()
@@ -830,8 +1009,34 @@ def list_users():
     if not current_user or current_user.role != 'admin':
         return jsonify({"error": "Admin access required"}), 403
         
+    active_tournament = Tournament.find_active(mongo)
     users = list(mongo.db.users.find())
-    return jsonify([User(u).to_dict() for u in users]), 200
+    
+    user_list = []
+    for u in users:
+        user_obj = User(u)
+        user_dict = user_obj.to_dict()
+        
+        # Calculate actual attendance for past day indices of the active tournament
+        attendance_history = {}
+        if active_tournament and active_tournament.dates:
+            for idx, dt in enumerate(active_tournament.dates):
+                if idx < active_tournament.current_day_index:
+                    # Check if player participated in any games on this day index
+                    played_game = mongo.db.games.find_one({
+                        "tournament_id": str(active_tournament._id),
+                        "day_index": idx,
+                        "$or": [
+                            {"team1_player_ids": str(user_obj._id)},
+                            {"team2_player_ids": str(user_obj._id)}
+                        ]
+                    })
+                    attendance_history[dt] = True if played_game else False
+        
+        user_dict['attendance_history'] = attendance_history
+        user_list.append(user_dict)
+        
+    return jsonify(user_list), 200
 
 @bp.route('/admin/users/<user_id>/role', methods=['POST'])
 @jwt_required()

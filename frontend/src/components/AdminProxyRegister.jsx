@@ -6,7 +6,8 @@ import API_URL from '../config';
 
 const AdminProxyRegister = () => {
     const [formData, setFormData] = useState({
-        name: '',
+        firstName: '',
+        lastName: '',
         email: '',
         phone: ''
     });
@@ -23,11 +24,17 @@ const AdminProxyRegister = () => {
         setError('');
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/admin/proxy-register`, formData, {
+            const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
+            
+            await axios.post(`${API_URL}/admin/proxy-register`, {
+                name: fullName,
+                email: formData.email,
+                phone: formData.phone
+            }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMsg('Proxy player registered successfully!');
-            setFormData({ name: '', email: '', phone: '' });
+            setFormData({ firstName: '', lastName: '', email: '', phone: '' });
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to register proxy player');
         }
@@ -46,15 +53,29 @@ const AdminProxyRegister = () => {
 
             <form onSubmit={handleSubmit}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                    <div style={{ gridColumn: 'span 2', position: 'relative' }}>
+                    <div style={{ position: 'relative' }}>
                         <UserIcon size={18} style={{ position: 'absolute', left: '14px', top: '16px', color: 'var(--text-muted)' }} />
                         <input
-                            name="name"
+                            name="firstName"
                             type="text"
-                            placeholder="Player's Full Name"
+                            placeholder="First Name"
                             className="input-field"
                             style={{ paddingLeft: '44px', marginBottom: '0' }}
-                            value={formData.name}
+                            value={formData.firstName}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
+
+                    <div style={{ position: 'relative' }}>
+                        <UserIcon size={18} style={{ position: 'absolute', left: '14px', top: '16px', color: 'var(--text-muted)' }} />
+                        <input
+                            name="lastName"
+                            type="text"
+                            placeholder="Last Name"
+                            className="input-field"
+                            style={{ paddingLeft: '44px', marginBottom: '0' }}
+                            value={formData.lastName}
                             onChange={handleChange}
                             required
                         />

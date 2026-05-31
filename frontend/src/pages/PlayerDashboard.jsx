@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, Users, Clock, CheckCircle2, Trophy, Play, Save, Shield, LogOut, Settings, Hourglass, Zap } from 'lucide-react';
+import { User, Users, Clock, CheckCircle2, Trophy, Play, Save, Shield, LogOut, Settings, Hourglass, Zap, Calendar, LayoutDashboard, Activity } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+
 import SocketService from '../services/socket';
 import API_URL from '../config';
 import ThemeToggle from '../components/ThemeToggle';
@@ -19,7 +21,47 @@ const PlayerDashboard = () => {
     const [myStats, setMyStats] = useState({ wins: 0, points: 0 });
     const [daySummary, setDaySummary] = useState({ state: 'waiting', games: [], rounds_total: 0, rounds_completed: 0 });
     const [showPowerPlayerToast, setShowPowerPlayerToast] = useState(false);
+    const [schedule, setSchedule] = useState(user.attendance_schedule || {});
     const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState('dashboard');
+
+
+    const formatDateShort = (dateStr) => {
+        const date = new Date(dateStr + 'T00:00:00');
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    const toggleScheduleDate = async (dateStr) => {
+        let currentStatus = schedule[dateStr];
+        let nextStatus;
+        if (currentStatus === undefined) {
+            nextStatus = true;
+        } else if (currentStatus === true) {
+            nextStatus = false;
+        } else {
+            nextStatus = null;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.put(`${API_URL}/user/schedule`, {
+                date: dateStr,
+                status: nextStatus
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setSchedule(res.data.attendance_schedule || {});
+            
+            // Sync with local storage
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            localStorage.setItem('user', JSON.stringify({ 
+                ...currentUser, 
+                attendance_schedule: res.data.attendance_schedule 
+            }));
+        } catch (err) {
+            console.error("Failed to update schedule", err);
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -32,6 +74,7 @@ const PlayerDashboard = () => {
                 });
                 setUser(uRes.data);
                 setCheckedIn(uRes.data.checked_in);
+                setSchedule(uRes.data.attendance_schedule || {});
 
                 const tRes = await axios.get(`${API_URL}/tournaments/active`, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -46,7 +89,12 @@ const PlayerDashboard = () => {
                             p.team1_player_ids.includes(userId) ||
                             p.team2_player_ids.includes(userId)
                         );
-                        if (myPair) setCurrentGame(myPair);
+                        if (myPair) {
+                            setCurrentGame(myPair);
+                            if (myPair.status === 'active') {
+                                setActiveTab('live');
+                            }
+                        }
                     });
                 }
 
@@ -56,7 +104,13 @@ const PlayerDashboard = () => {
                 });
                 if (gRes.data) {
                     setCurrentGame(gRes.data);
+                    if (gRes.data.status === 'active') {
+                        setActiveTab('live');
+                    }
+                } else {
+                    setCurrentGame(null);
                 }
+
 
                 // Fetch day summary for session state
                 const dsRes = await axios.get(`${API_URL}/player/day-summary`, {
@@ -114,6 +168,16 @@ const PlayerDashboard = () => {
         return () => clearInterval(interval);
     }, [currentGame]);
 
+    // Automatically redirect to dashboard if the active game is completed/finalized
+    useEffect(() => {
+        if (currentGame === null) {
+            if (activeTab === 'live') {
+                setActiveTab('dashboard');
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentGame]);
+
     const [checkInError, setCheckInError] = useState('');
 
     const handleCheckIn = async () => {
@@ -151,7 +215,9 @@ const PlayerDashboard = () => {
             setScore1('');
             setScore2('');
             setScoreError('');
+            setActiveTab('dashboard');
             // Refresh day summary
+
             const dsRes = await axios.get(`${API_URL}/player/day-summary`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -430,105 +496,241 @@ const PlayerDashboard = () => {
                     <p style={{ color: 'var(--text-muted)' }}>No active tournament scheduled at the moment.</p>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gap: '24px' }}>
+                <div style={{ display: 'grid', gap: '20px' }}>
+                    {/* Tab Navigation */}
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                        <button
+                            onClick={() => setActiveTab('dashboard')}
+                            style={{
+                                flex: 1,
+                                padding: '12px 16px',
+                                borderRadius: '12px',
+                                background: activeTab === 'dashboard' ? 'var(--brand-teal-glow)' : 'transparent',
+                                border: activeTab === 'dashboard' ? '1px solid var(--brand-teal)' : '1px solid transparent',
+                                color: activeTab === 'dashboard' ? 'var(--brand-teal)' : 'var(--text-muted)',
+                                fontWeight: '700',
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px'
+                            }}
+                        >
+                            <LayoutDashboard size={18} />
+                            Dashboard
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('live')}
+                            style={{
+                                flex: 1,
+                                padding: '12px 16px',
+                                borderRadius: '12px',
+                                background: activeTab === 'live' ? 'var(--brand-teal-glow)' : 'transparent',
+                                border: activeTab === 'live' ? '1px solid var(--brand-teal)' : '1px solid transparent',
+                                color: activeTab === 'live' ? 'var(--brand-teal)' : 'var(--text-muted)',
+                                fontWeight: '700',
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                position: 'relative'
+                            }}
+                        >
+                            <Activity size={18} />
+                            Live Match
+                            {currentGame?.status === 'active' && (
+                                <span style={{
+                                    position: 'absolute',
+                                    top: '4px',
+                                    right: '4px',
+                                    width: '10px',
+                                    height: '10px',
+                                    background: '#fbbf24',
+                                    borderRadius: '50%',
+                                    border: '2px solid var(--bg)'
+                                }} />
+                            )}
+                        </button>
+                    </div>
 
-                    {/* Check-In Card */}
-                    <AnimatePresence>
-                        {!checkedIn && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="glass-card"
-                                style={{ padding: '24px', border: '1px solid var(--brand-teal-glow)', background: 'rgba(99, 102, 241, 0.05)' }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                    <Clock style={{ color: 'var(--brand-teal)', marginTop: '4px' }} />
-                                    <div style={{ flex: 1 }}>
-                                        <h3 style={{ marginBottom: '4px' }}>Presence Confirmation</h3>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '12px' }}>
-                                            Confirm you are here to be included in today's pairings.
-                                        </p>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '16px', fontStyle: 'italic' }}>
-                                            💵 Don't forget to find the Tournament Director to pay your entry fee!
-                                        </p>
-                                        {checkInError && (
-                                            <div style={{
-                                                background: 'rgba(251, 191, 36, 0.1)',
-                                                border: '1px solid rgba(251, 191, 36, 0.3)',
-                                                borderRadius: '8px',
-                                                padding: '12px',
-                                                marginBottom: '16px',
-                                                color: '#fbbf24',
-                                                fontSize: '13px',
-                                                textAlign: 'center'
-                                            }}>
-                                                ⏰ {checkInError}
+                    {/* DASHBOARD TAB CONTENT */}
+                    {activeTab === 'dashboard' && (
+                        <div style={{ display: 'grid', gap: '20px' }}>
+                            {/* Check-In Card */}
+                            <AnimatePresence>
+                                {!checkedIn && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="glass-card"
+                                        style={{ padding: '24px', border: '1px solid var(--brand-teal-glow)', background: 'rgba(99, 102, 241, 0.05)' }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                            <Clock style={{ color: 'var(--brand-teal)', marginTop: '4px' }} />
+                                            <div style={{ flex: 1 }}>
+                                                <h3 style={{ marginBottom: '4px' }}>Presence Confirmation</h3>
+                                                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '12px' }}>
+                                                    Confirm you are here to be included in today's pairings.
+                                                </p>
+                                                <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '16px', fontStyle: 'italic' }}>
+                                                    💵 Don't forget to find the Tournament Director to pay your entry fee!
+                                                </p>
+                                                {checkInError && (
+                                                    <div style={{
+                                                        background: 'rgba(251, 191, 36, 0.1)',
+                                                        border: '1px solid rgba(251, 191, 36, 0.3)',
+                                                        borderRadius: '8px',
+                                                        padding: '12px',
+                                                        marginBottom: '16px',
+                                                        color: '#fbbf24',
+                                                        fontSize: '13px',
+                                                        textAlign: 'center'
+                                                    }}>
+                                                        ⏰ {checkInError}
+                                                    </div>
+                                                )}
+                                                <button onClick={handleCheckIn} className="btn-primary" style={{ width: '100%' }}>
+                                                    I'm Here!
+                                                </button>
                                             </div>
-                                        )}
-                                        <button onClick={handleCheckIn} className="btn-primary" style={{ width: '100%' }}>
-                                            I'm Here!
-                                        </button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {checkedIn && (
+                                <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <CheckCircle2 size={24} style={{ color: '#10b981' }} />
+                                    <span style={{ fontWeight: '600' }}>Presence Confirmed</span>
+                                </div>
+                            )}
+
+                            {/* Attendance Planner Card */}
+                            {tournament.dates && tournament.dates.some((_, idx) => idx > tournament.current_day_index) && (
+                                <div className="glass-card" style={{ padding: '24px', border: '1px solid var(--border)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                                        <Calendar size={22} style={{ color: 'var(--brand-teal)' }} />
+                                        <h3 style={{ fontSize: '18px' }}>Attendance Planner</h3>
+                                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '20px', marginLeft: 'auto' }}>Optional</span>
+                                    </div>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '20px', lineHeight: '1.5' }}>
+                                        Help us plan match courts by indicating which upcoming dates you expect to attend or miss. Tap to toggle.
+                                    </p>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                                        {tournament.dates.map((dateStr, idx) => {
+                                            if (idx <= tournament.current_day_index) return null;
+                                            
+                                            const status = schedule[dateStr];
+                                            let borderColor = 'var(--border)';
+                                            let bgColor = 'rgba(255,255,255,0.02)';
+                                            let textColor = 'var(--text-muted)';
+                                            let planLabel = 'Undecided';
+                                            
+                                            if (status === true) {
+                                                borderColor = '#10b981';
+                                                bgColor = 'rgba(16, 185, 129, 0.08)';
+                                                textColor = '#10b981';
+                                                planLabel = 'Attending';
+                                            } else if (status === false) {
+                                                borderColor = '#ef4444';
+                                                bgColor = 'rgba(239, 68, 68, 0.08)';
+                                                textColor = '#ef4444';
+                                                planLabel = 'Skipping';
+                                            }
+                                            
+                                            return (
+                                                <button
+                                                    key={dateStr}
+                                                    onClick={() => toggleScheduleDate(dateStr)}
+                                                    style={{
+                                                        background: bgColor,
+                                                        border: `2px solid ${borderColor}`,
+                                                        borderRadius: '16px',
+                                                        padding: '12px 16px',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        cursor: 'pointer',
+                                                        minWidth: '95px',
+                                                        transition: 'all 0.2s ease',
+                                                        flex: '1 1 calc(33.333% - 8px)'
+                                                    }}
+                                                    className="schedule-btn"
+                                                >
+                                                    <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>
+                                                        {formatDateShort(dateStr)}
+                                                    </span>
+                                                    <span style={{ fontSize: '11px', color: textColor, fontWeight: '700', textTransform: 'uppercase' }}>
+                                                        {planLabel}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                            )}
 
-                    {checkedIn && (
-                        <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <CheckCircle2 size={24} style={{ color: '#10b981' }} />
-                            <span style={{ fontWeight: '600' }}>Presence Confirmed</span>
+                            {/* Personal Stats */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div className="glass-card" style={{ padding: '24px', textAlign: 'center', border: '1px solid var(--border)' }}>
+                                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Your Wins</p>
+                                    <h4 style={{ fontSize: '32px', fontWeight: '800', color: 'var(--brand-teal)' }}>{myStats.wins}</h4>
+                                </div>
+                                <div className="glass-card" style={{ padding: '24px', textAlign: 'center', border: '1px solid var(--border)' }}>
+                                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Total Points</p>
+                                    <h4 style={{ fontSize: '32px', fontWeight: '800', color: 'var(--brand-teal)' }}>{myStats.points}</h4>
+                                </div>
+                            </div>
                         </div>
                     )}
 
-                    {/* Your Session Card */}
-                    <div className="glass-card" style={{
-                        padding: '24px',
-                        border: currentGame?.status === 'active' && timer === 0 ? '1px solid #ef4444' : '1px solid var(--border)',
-                        boxShadow: currentGame?.status === 'active' && timer === 0 ? '0 0 20px rgba(239, 68, 68, 0.1)' : 'none',
-                        transition: 'all 0.5s ease'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', justifyContent: 'space-between' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <Users size={24} style={{ color: 'var(--brand-teal)' }} />
-                                <h3 style={{ fontSize: '20px' }}>Your Session</h3>
-                            </div>
-                            {currentGame?.status === 'active' && (
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    background: timer > 0 ? (timer < 120 ? 'rgba(251, 191, 36, 0.1)' : 'rgba(99, 102, 241, 0.1)') : 'rgba(239, 68, 68, 0.1)',
-                                    padding: '6px 12px',
-                                    borderRadius: '20px',
-                                    color: timer > 0 ? (timer < 120 ? '#fbbf24' : 'var(--brand-teal)') : '#ef4444',
-                                    fontWeight: '800',
-                                    border: `1px solid ${timer > 0 ? (timer < 120 ? '#fbbf2433' : 'var(--brand-teal-glow)') : '#ef444433'}`,
-                                    transition: 'all 0.3s ease'
-                                }}>
-                                    <Clock size={16} />
-                                    <span>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}</span>
+                    {/* LIVE GAME TAB CONTENT */}
+                    {activeTab === 'live' && (
+                        <div style={{ display: 'grid', gap: '20px' }}>
+                            <div className="glass-card" style={{
+                                padding: '24px',
+                                border: currentGame?.status === 'active' && timer === 0 ? '1px solid #ef4444' : '1px solid var(--border)',
+                                boxShadow: currentGame?.status === 'active' && timer === 0 ? '0 0 20px rgba(239, 68, 68, 0.1)' : 'none',
+                                transition: 'all 0.5s ease'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <Users size={24} style={{ color: 'var(--brand-teal)' }} />
+                                        <h3 style={{ fontSize: '20px' }}>Your Session</h3>
+                                    </div>
+                                    {currentGame?.status === 'active' && (
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            background: timer > 0 ? (timer < 120 ? 'rgba(251, 191, 36, 0.1)' : 'rgba(99, 102, 241, 0.1)') : 'rgba(239, 68, 68, 0.1)',
+                                            padding: '6px 12px',
+                                            borderRadius: '20px',
+                                            color: timer > 0 ? (timer < 120 ? '#fbbf24' : 'var(--brand-teal)') : '#ef4444',
+                                            fontWeight: '800',
+                                            border: `1px solid ${timer > 0 ? (timer < 120 ? '#fbbf2433' : 'var(--brand-teal-glow)') : '#ef444433'}`,
+                                            transition: 'all 0.3s ease'
+                                        }}>
+                                            <Clock size={16} />
+                                            <span>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
 
-                        {renderSessionContent()}
-                    </div>
-
-                    {/* Personal Stats (only shows player's own stats, no leaderboard) */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div className="glass-card" style={{ padding: '24px', textAlign: 'center', border: '1px solid var(--border)' }}>
-                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Your Wins</p>
-                            <h4 style={{ fontSize: '32px', fontWeight: '800', color: 'var(--brand-teal)' }}>{myStats.wins}</h4>
+                                {renderSessionContent()}
+                            </div>
                         </div>
-                        <div className="glass-card" style={{ padding: '24px', textAlign: 'center', border: '1px solid var(--border)' }}>
-                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Total Points</p>
-                            <h4 style={{ fontSize: '32px', fontWeight: '800', color: 'var(--brand-teal)' }}>{myStats.points}</h4>
-                        </div>
-                    </div>
+                    )}
                 </div>
             )}
+
 
             {/* Power Player Toast Notification */}
             <AnimatePresence>

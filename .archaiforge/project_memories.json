@@ -1,0 +1,68 @@
+{
+  "project": "bags_brats",
+  "version": "1.0",
+  "schema": "project_memory_v1",
+  "memories": [
+    {
+      "id": "pm_cryst_8389383c",
+      "type": "learning",
+      "priority": "normal",
+      "content": "Recurring pattern: \"archaiforge\" appears across 2 outcomes — this may be a system-level concern for bags_brats.",
+      "tags": [
+        "pattern",
+        "recurring",
+        "auto",
+        "archaiforge"
+      ],
+      "approved_by": "auto_crystallized",
+      "source": "crystallization_engine pattern detection",
+      "added_at": "2026-05-31T01:02:30.803Z"
+    },
+    {
+      "id": "pm_cryst_4571a86c",
+      "type": "learning",
+      "priority": "normal",
+      "content": "Recurring pattern: \"desktop\" appears across 4 outcomes — this may be a system-level concern for bags_brats.",
+      "tags": [
+        "pattern",
+        "recurring",
+        "auto",
+        "desktop"
+      ],
+      "approved_by": "auto_crystallized",
+      "source": "crystallization_engine pattern detection",
+      "added_at": "2026-05-31T01:02:30.803Z"
+    },
+    {
+      "id": "pm_cryst_9e7a03d5",
+      "type": "behavioral",
+      "priority": "normal",
+      "content": "Critical drift correction at T:0 — drift gate triggered (CRITICAL). Context: Active Task. This type of drift is worth watching.",
+      "tags": [
+        "dwell",
+        "drift",
+        "auto",
+        "behavioral"
+      ],
+      "approved_by": "auto_crystallized",
+      "source": "TDIP dwell_events T:0",
+      "added_at": "2026-05-31T01:02:30.803Z"
+    },
+    {
+      "id": "pm_cryst_d63b99ac",
+      "type": "behavioral",
+      "priority": "normal",
+      "content": "Critical drift correction at T:0 — drift gate triggered (CRITICAL). Context: Active Task. This type of drift is worth watching.",
+      "tags": [
+        "dwell",
+        "drift",
+        "auto",
+        "behavioral"
+      ],
+      "approved_by": "auto_crystallized",
+      "source": "TDIP dwell_events T:0",
+      "added_at": "2026-05-31T01:02:30.803Z"
+    }
+  ],
+  "last_updated": "2026-05-31T01:02:30.803Z"
+}

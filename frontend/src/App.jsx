@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import axios from 'axios';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import PlayerDashboard from './pages/PlayerDashboard';
@@ -9,6 +10,26 @@ import OAuthCallback from './pages/OAuthCallback';
 import UserSettings from './pages/UserSettings';
 import BigReveal from './pages/BigReveal';
 import PrivateRoute from './components/PrivateRoute';
+
+// Set up global Axios interceptor to handle token expiration
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      const isLoginRequest = error.config?.url?.endsWith('/auth/login') || error.config?.url?.endsWith('/login');
+      if (!isLoginRequest) {
+        // Clear stale local storage session
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // Gracefully notify and redirect
+        alert("Your session has expired. Please log in again.");
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 const App = () => {
   return (

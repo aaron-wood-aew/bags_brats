@@ -9,6 +9,38 @@ const AdminUserManagement = () => {
     const [loading, setLoading] = useState(true);
     const [sortField, setSortField] = useState('name');
     const [sortDirection, setSortDirection] = useState('asc');
+    const [activeTournament, setActiveTournament] = useState(null);
+
+    const fetchActiveTournament = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/tournaments/active`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setActiveTournament(res.data);
+        } catch (err) {
+            console.error("Failed to fetch active tournament", err);
+        }
+    };
+
+    const formatDateTooltip = (dateStr, isPast, isCurrent, user) => {
+        const date = new Date(dateStr + 'T00:00:00');
+        const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        if (isPast) {
+            const attended = user.attendance_history?.[dateStr];
+            return `${formattedDate} (Past) — ${attended ? 'Attended' : 'Absent'}`;
+        }
+        if (isCurrent) {
+            return `${formattedDate} (Today) — ${user.checked_in ? 'Checked In' : 'Absent'}`;
+        }
+        
+        const planned = user.attendance_schedule?.[dateStr];
+        let planText = 'Undecided';
+        if (planned === true) planText = 'Plan to Attend';
+        if (planned === false) planText = 'Plan to Skip';
+        return `${formattedDate} (Future) — ${planText}`;
+    };
 
     const fetchUsers = async () => {
         try {
@@ -50,6 +82,7 @@ const AdminUserManagement = () => {
 
     useEffect(() => {
         fetchUsers();
+        fetchActiveTournament();
     }, []);
 
     const toggleCheckIn = async (userId, currentStatus) => {
@@ -219,6 +252,9 @@ const AdminUserManagement = () => {
                                     <ArrowUpDown size={14} style={{ opacity: sortField === 'role' ? 1 : 0.3 }} />
                                 </div>
                             </th>
+                            {activeTournament && activeTournament.dates && (
+                                <th style={{ padding: '12px' }}>Schedule & History</th>
+                            )}
                             <th style={{ padding: '12px' }}>Paid</th>
                             <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
                         </tr>
@@ -286,6 +322,52 @@ const AdminUserManagement = () => {
                                         {user.role}
                                     </span>
                                 </td>
+                                {activeTournament && activeTournament.dates && (
+                                    <td style={{ padding: '12px' }}>
+                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                            {activeTournament.dates.map((dateStr, idx) => {
+                                                const isPast = idx < activeTournament.current_day_index;
+                                                const isCurrent = idx === activeTournament.current_day_index;
+                                                const isFuture = idx > activeTournament.current_day_index;
+                                                
+                                                let bgColor = 'transparent';
+                                                let border = '2px solid rgba(255,255,255,0.1)';
+                                                
+                                                if (isPast) {
+                                                    const attended = user.attendance_history?.[dateStr];
+                                                    bgColor = attended ? '#10b981' : '#ef4444';
+                                                    border = `2px solid ${attended ? '#10b981' : '#ef4444'}`;
+                                                } else if (isCurrent) {
+                                                    border = `2px solid ${user.checked_in ? '#10b981' : 'var(--text-muted)'}`;
+                                                } else if (isFuture) {
+                                                    const planned = user.attendance_schedule?.[dateStr];
+                                                    if (planned === true) {
+                                                        border = '2px solid #10b981';
+                                                    } else if (planned === false) {
+                                                        border = '2px solid #ef4444';
+                                                    } else {
+                                                        border = '2px solid rgba(255,255,255,0.15)';
+                                                    }
+                                                }
+                                                
+                                                return (
+                                                    <div
+                                                        key={dateStr}
+                                                        style={{
+                                                            width: '14px',
+                                                            height: '14px',
+                                                            borderRadius: '4px',
+                                                            backgroundColor: bgColor,
+                                                            border: border,
+                                                            cursor: 'help'
+                                                        }}
+                                                        title={formatDateTooltip(dateStr, isPast, isCurrent, user)}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
+                                    </td>
+                                )}
                                 <td style={{ padding: '12px', cursor: 'pointer' }} onClick={() => togglePaid(user._id, user.has_paid)}>
                                     {user.has_paid ? (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '13px' }}>

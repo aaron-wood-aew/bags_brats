@@ -1,0 +1,13 @@
+{
+  "last_check": "2026-01-12T19:30:00Z",
+  "last_pulse": "2026-05-30T23:04:24.453672+00:00",
+  "metrics": {
+    "peak_tension": 0.8684888532185031,
+    "roi_multiplier": 1.0,
+    "turn_count": 3,
+    "turns_since_log": 0
+  },
+  "proof_hash": "3a67f995a023a30eedf089e64aace7385886871fba94e3600db06061705297ea",
+  "status": "HEALTHY",
+  "unlogged_files": 0
+}
