@@ -32,6 +32,21 @@ def create_app(config_class=Config):
         try:
             mongo.db.command('ping')
             print("✅ MongoDB connected successfully!")
+            
+            # Automatic Admin Bootstrap if DB is empty
+            if mongo.db.users.count_documents({}) == 0:
+                from app.models import User
+                new_user = User({
+                    "name": "Tournament Admin",
+                    "email": "admin@example.com",
+                    "role": "admin",
+                    "is_proxy": False,
+                    "is_power_player": False,
+                    "checked_in": False
+                })
+                new_user.set_password("bags2026")
+                new_user.save(mongo)
+                print("🚀 Seeded default admin account: admin@example.com / bags2026")
         except Exception as e:
             print(f"❌ MongoDB connection failed: {e}")
             print(f"   Using URI: {app.config['MONGO_URI']}")
