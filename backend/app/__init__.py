@@ -33,9 +33,9 @@ def create_app(config_class=Config):
             mongo.db.command('ping')
             print("✅ MongoDB connected successfully!")
             
-            # Automatic Admin Bootstrap if DB is empty
-            if mongo.db.users.count_documents({}) == 0:
-                from app.models import User
+            # Automatic Admin Bootstrap if admin@example.com doesn't exist
+            from app.models import User
+            if not User.find_by_email(mongo, "admin@example.com"):
                 new_user = User({
                     "name": "Tournament Admin",
                     "email": "admin@example.com",
