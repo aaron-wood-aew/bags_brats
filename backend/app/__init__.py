@@ -22,6 +22,25 @@ def create_app(config_class=Config):
 
     CORS(app)
     
+    # Debug print MONGO_URI (masking password)
+    raw_uri = app.config.get('MONGO_URI', '')
+    masked_uri = 'None'
+    if raw_uri:
+        if '@' in raw_uri:
+            try:
+                parts = raw_uri.split('@')
+                prefix = parts[0]
+                if ':' in prefix:
+                    subparts = prefix.split(':')
+                    # mongodb://user:pass -> mongodb://user:****
+                    prefix = f"{subparts[0]}:{subparts[1]}:****"
+                masked_uri = f"{prefix}@{parts[1]}"
+            except Exception:
+                masked_uri = "[Unparseable URI]"
+        else:
+            masked_uri = raw_uri
+    print(f"📢 [DIAGNOSTIC] App starting. MONGO_URI = {masked_uri}")
+    
     mongo.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
