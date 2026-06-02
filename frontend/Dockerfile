@@ -12,6 +12,10 @@ RUN npm ci
 # Copy all source files
 COPY . .
 
+# Pass build environment variables for Vite static compilation
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build the app
 RUN npm run build
 
