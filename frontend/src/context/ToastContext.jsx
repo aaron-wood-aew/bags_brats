@@ -262,12 +262,186 @@ const ConfirmModal = ({ title, message, confirmText = 'Confirm', cancelText = 'C
   );
 };
 
+// PREMIUM GLASSMORPHIC PROMPT MODAL COMPONENT
+const PromptModal = ({ title, message, placeholder = '', inputType = 'text', confirmText = 'Submit', cancelText = 'Cancel', type = 'purple', onConfirm, onCancel }) => {
+  const [value, setValue] = useState('');
+
+  const accentColor = '#8b5cf6';
+  const glowColor = 'rgba(139, 92, 246, 0.15)';
+  const gradient = 'linear-gradient(135deg, #8b5cf6, #6366f1)';
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 10001,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        background: 'rgba(5, 8, 15, 0.75)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        pointerEvents: 'auto',
+        fontFamily: "'Outfit', sans-serif"
+      }}
+    >
+      <div 
+        onClick={onCancel}
+        style={{ position: 'absolute', inset: 0, zIndex: -1 }} 
+      />
+
+      <motion.div
+        initial={{ scale: 0.93, opacity: 0, y: 15 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 10, transition: { duration: 0.15 } }}
+        transition={{ type: 'spring', stiffness: 350, damping: 26 }}
+        style={{
+          background: 'rgba(13, 21, 32, 0.92)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderTop: `4px solid ${accentColor}`,
+          borderRadius: '24px',
+          padding: '28px',
+          width: '100%',
+          maxWidth: '460px',
+          boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 35px ${glowColor}`,
+          color: '#f8fafc',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }}
+      >
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+          <div
+            style={{
+              background: 'rgba(139, 92, 246, 0.1)',
+              borderRadius: '12px',
+              padding: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            <HelpCircle size={24} style={{ color: accentColor }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.02em', margin: 0, color: '#f3f4f6' }}>
+              {title}
+            </h3>
+            <p style={{ fontSize: '14px', fontWeight: '400', color: '#94a3b8', lineHeight: '1.5', margin: 0 }}>
+              {message}
+            </p>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (value.trim()) {
+                  onConfirm(value.trim());
+                }
+              }}
+              style={{ width: '100%', marginTop: '8px' }}
+            >
+              <input
+                type={inputType}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder={placeholder}
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  color: '#f8fafc',
+                  fontFamily: 'inherit',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.2)'
+                }}
+              />
+            </form>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', marginTop: '8px', justifyContent: 'flex-end' }}>
+          <button
+            onClick={onCancel}
+            style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '12px',
+              padding: '12px 20px',
+              color: '#94a3b8',
+              fontWeight: '600',
+              fontSize: '14px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              fontFamily: 'inherit'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.color = '#f3f4f6';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+              e.currentTarget.style.color = '#94a3b8';
+            }}
+          >
+            {cancelText}
+          </button>
+          
+          <button
+            onClick={() => onConfirm(value.trim())}
+            disabled={!value.trim()}
+            style={{
+              background: gradient,
+              border: 'none',
+              borderRadius: '12px',
+              padding: '12px 22px',
+              color: '#ffffff',
+              fontWeight: '700',
+              fontSize: '14px',
+              cursor: value.trim() ? 'pointer' : 'not-allowed',
+              boxShadow: value.trim() ? `0 4px 14px ${glowColor}` : 'none',
+              transition: 'all 0.2s',
+              fontFamily: 'inherit',
+              opacity: value.trim() ? 1 : 0.5
+            }}
+            onMouseEnter={(e) => {
+              if (value.trim()) {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.filter = 'brightness(1.1)';
+                e.currentTarget.style.boxShadow = `0 6px 20px ${glowColor}`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (value.trim()) {
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.filter = 'none';
+                e.currentTarget.style.boxShadow = `0 4px 14px ${glowColor}`;
+              }
+            }}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
   
   // Custom Confirm Dialog States
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState(null);
+
+  // Custom Prompt Dialog States
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [promptConfig, setPromptConfig] = useState(null);
 
   const showToast = useCallback((message, type = 'info', duration = 4000) => {
     const id = Date.now() + Math.random().toString(36).substr(2, 9);
@@ -293,11 +467,25 @@ export const ToastProvider = ({ children }) => {
     });
   }, []);
 
+  // PROMISE-BASED PROMPT BRIDGE
+  const customPrompt = useCallback((options) => {
+    return new Promise((resolve) => {
+      setPromptConfig({
+        ...options,
+        resolve: (value) => {
+          setShowPrompt(false);
+          resolve(value);
+        }
+      });
+      setShowPrompt(true);
+    });
+  }, []);
+
   // Register internal state setter globally
   globalShowToast = showToast;
 
   return (
-    <ToastContext.Provider value={{ showToast, dismissToast, confirm }}>
+    <ToastContext.Provider value={{ showToast, dismissToast, confirm, prompt: customPrompt }}>
       {children}
       
       {/* Toast container portal/overlay */}
@@ -320,6 +508,17 @@ export const ToastProvider = ({ children }) => {
             {...confirmConfig}
             onCancel={() => confirmConfig.resolve(false)}
             onConfirm={() => confirmConfig.resolve(true)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Center-aligned custom prompt modal portal */}
+      <AnimatePresence>
+        {showPrompt && promptConfig && (
+          <PromptModal
+            {...promptConfig}
+            onCancel={() => promptConfig.resolve(null)}
+            onConfirm={(val) => promptConfig.resolve(val)}
           />
         )}
       </AnimatePresence>

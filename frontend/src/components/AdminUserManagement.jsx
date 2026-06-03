@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key, ArrowUpDown, DollarSign } from 'lucide-react';
+import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key, ArrowUpDown, DollarSign, Link2Off } from 'lucide-react';
 import { motion } from 'framer-motion';
 import API_URL from '../config';
 import { useToast } from '../context/ToastContext';
 
 const AdminUserManagement = () => {
-    const { showToast, confirm } = useToast();
+    const { showToast, confirm, prompt: customPrompt } = useToast();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [sortField, setSortField] = useState('name');
@@ -162,7 +162,13 @@ const AdminUserManagement = () => {
     };
 
     const resetPassword = async (userId, userName) => {
-        const newPassword = prompt(`Enter new password for ${userName} (min 6 characters):`);
+        const newPassword = await customPrompt({
+            title: 'Reset Password',
+            message: `Enter new password for ${userName}:`,
+            placeholder: 'Minimum 6 characters',
+            inputType: 'password',
+            confirmText: 'Reset Password'
+        });
         if (!newPassword) return;
         if (newPassword.length < 6) {
             showToast('Password must be at least 6 characters', 'warning');
@@ -176,6 +182,53 @@ const AdminUserManagement = () => {
             showToast(`Password successfully reset for ${userName}! 🔑`, 'success');
         } catch (err) {
             showToast(err.response?.data?.error || 'Failed to reset password', 'error');
+        }
+    };
+
+    const unlinkOAuth = async (user) => {
+        const providerText = (user.google_id && user.apple_id) ? 'Google and Apple' : user.google_id ? 'Google' : 'Apple';
+        const hasExistingPassword = !!user.password_hash;
+        
+        let confirmMsg = `Are you sure you want to remove ${providerText} login for ${user.name}? They will no longer be able to log in using their social account.`;
+        if (!hasExistingPassword) {
+            confirmMsg += `\n\nNote: This user has no password set. Converting their account will require you to enter a temporary password.`;
+        } else {
+            confirmMsg += `\n\nThey will revert to logging in using their email and existing password.`;
+        }
+
+        if (!(await confirm({
+            title: `Remove Social Login?`,
+            message: confirmMsg,
+            confirmText: 'Convert Account',
+            type: 'warning'
+        }))) return;
+
+        let tempPassword = '';
+        if (!hasExistingPassword) {
+            tempPassword = await customPrompt({
+                title: 'Set Temporary Password',
+                message: `Enter temporary password for ${user.name}:`,
+                placeholder: 'Minimum 6 characters',
+                inputType: 'password',
+                confirmText: 'Set Password'
+            });
+            if (!tempPassword) return;
+            if (tempPassword.length < 6) {
+                showToast('Password must be at least 6 characters', 'warning');
+                return;
+            }
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const payload = tempPassword ? { new_password: tempPassword } : {};
+            await axios.post(`${API_URL}/admin/users/${user._id}/unlink-oauth`, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchUsers();
+            showToast(`Social login unlinked successfully for ${user.name}! 🔌`, 'success');
+        } catch (err) {
+            showToast(err.response?.data?.error || 'Failed to unlink social login', 'error');
         }
     };
 
@@ -395,6 +448,15 @@ const AdminUserManagement = () => {
                                 </td>
                                 <td style={{ padding: '12px', textAlign: 'right' }}>
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                                        {(user.google_id || user.apple_id) && (
+                                            <button
+                                                onClick={() => unlinkOAuth(user)}
+                                                style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer' }}
+                                                title="Remove Social Login"
+                                            >
+                                                <Link2Off size={18} />
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => resetPassword(user._id, user.name)}
                                             style={{ background: 'none', border: 'none', color: '#fbbf24', cursor: 'pointer' }}

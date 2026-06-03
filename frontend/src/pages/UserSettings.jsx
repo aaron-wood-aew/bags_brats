@@ -109,7 +109,8 @@ const UserSettings = () => {
         }
     };
 
-    const isGoogleUser = user?.google_id && !user?.password_hash;
+    const isOAuthUser = (user?.google_id || user?.apple_id) && !user?.password_hash;
+    const oauthProvider = user?.google_id ? 'Google' : 'Apple';
 
     if (loading) {
         return (
@@ -332,7 +333,7 @@ const UserSettings = () => {
             </motion.div>
 
             {/* Password Section */}
-            {!isGoogleUser && (
+            {!isOAuthUser && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -403,8 +404,8 @@ const UserSettings = () => {
                 </motion.div>
             )}
 
-            {/* Google User Notice */}
-            {isGoogleUser && (
+            {/* OAuth User Notice */}
+            {isOAuthUser && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -413,7 +414,7 @@ const UserSettings = () => {
                     style={{ padding: '24px', textAlign: 'center' }}
                 >
                     <p style={{ color: 'var(--text-muted)' }}>
-                        You signed in with Google. Password management is handled through your Google account.
+                        You signed in with {oauthProvider}. Password management is handled through your {oauthProvider} account.
                     </p>
                 </motion.div>
             )}

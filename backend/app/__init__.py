@@ -4,6 +4,7 @@ from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from flask_socketio import SocketIO
+from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 import os
 
@@ -19,6 +20,9 @@ def create_app(config_class=Config):
     global scheduler
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    # Trust reverse proxy headers (Railway load balancer)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     CORS(app)
     

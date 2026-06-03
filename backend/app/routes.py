@@ -1141,6 +1141,39 @@ def toggle_paid(user_id):
     
     return jsonify({"msg": f"Payment status updated for {user.name}", "has_paid": has_paid}), 200
 
+@bp.route('/admin/users/<user_id>/unlink-oauth', methods=['POST'])
+@jwt_required()
+def admin_unlink_oauth(user_id):
+    """Admin unlinks a user's Google or Apple OAuth connection."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+        
+    user = User.find_by_id(mongo, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+        
+    data = request.json or {}
+    new_password = data.get('new_password')
+    
+    # If the user does not have a password set, require a new password
+    if not user.password_hash:
+        if not new_password or len(new_password) < 6:
+            return jsonify({"error": "A password of at least 6 characters is required to convert this account."}), 400
+            
+    if new_password:
+        if len(new_password) < 6:
+            return jsonify({"error": "Password must be at least 6 characters"}), 400
+        user.set_password(new_password)
+        
+    # Clear OAuth fields
+    user.google_id = None
+    user.apple_id = None
+    user.save(mongo)
+    
+    return jsonify({"msg": f"Social login successfully unlinked for {user.name}."}), 200
+
 @bp.route('/admin/games', methods=['GET'])
 @jwt_required()
 def list_active_games():
