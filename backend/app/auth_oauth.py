@@ -74,7 +74,7 @@ def google_callback():
     
     if error:
         # Redirect to frontend with error
-        frontend_url = current_app.config.get('FRONTEND_URL', 'https://efficient-insight-production.up.railway.app')
+        frontend_url = current_app.config.get('FRONTEND_URL', 'https://www.bagsandbrats.com')
         return redirect(f"{frontend_url}/login?error={error}")
     
     if not code:
@@ -129,7 +129,7 @@ def google_callback():
         access_token = create_access_token(identity=str(user._id))
         
         # Redirect to frontend with token
-        frontend_url = current_app.config.get('FRONTEND_URL', 'https://efficient-insight-production.up.railway.app')
+        frontend_url = current_app.config.get('FRONTEND_URL', 'https://www.bagsandbrats.com')
         return redirect(f"{frontend_url}/oauth-callback?token={access_token}&user_id={str(user._id)}&name={user.name}&role={user.role}")
         
     except Exception as e:
@@ -165,7 +165,7 @@ def apple_callback():
     error = request.form.get('error')
     user_data = request.form.get('user')  # Only sent on first sign-in
     
-    frontend_url = current_app.config.get('FRONTEND_URL', 'https://efficient-insight-production.up.railway.app')
+    frontend_url = current_app.config.get('FRONTEND_URL', 'https://www.bagsandbrats.com')
     
     if error:
         return redirect(f"{frontend_url}/login?error={error}")
