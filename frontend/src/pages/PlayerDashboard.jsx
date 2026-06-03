@@ -770,14 +770,14 @@ const PlayerDashboard = () => {
             <AnimatePresence>
                 {showPowerPlayerToast && (
                     <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 50 }}
+                        initial={{ opacity: 0, y: 50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: 50, x: '-50%' }}
                         style={{
                             position: 'fixed',
                             bottom: '24px',
                             left: '50%',
-                            transform: 'translateX(-50%)',
+                            width: 'calc(100% - 32px)',
                             background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.1))',
                             border: '1px solid rgba(251, 191, 36, 0.4)',
                             borderRadius: '16px',
