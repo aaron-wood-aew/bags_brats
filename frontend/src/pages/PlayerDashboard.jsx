@@ -141,9 +141,12 @@ const PlayerDashboard = () => {
         };
     }, []);
 
-    // Show Power Player toast after 12 seconds for non-Power Players
+    // Show Power Player toast after 12 seconds for non-Power Players if not dismissed
     useEffect(() => {
         if (user && !user.is_power_player) {
+            const isDismissed = localStorage.getItem('power_player_dismissed') === 'true';
+            if (isDismissed) return;
+
             const toastTimer = setTimeout(() => {
                 setShowPowerPlayerToast(true);
             }, 12000);
@@ -800,6 +803,7 @@ const PlayerDashboard = () => {
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <button
                                         onClick={() => {
+                                            localStorage.setItem('power_player_dismissed', 'true');
                                             setShowPowerPlayerToast(false);
                                             navigate('/settings');
                                         }}
@@ -817,7 +821,10 @@ const PlayerDashboard = () => {
                                         Learn More
                                     </button>
                                     <button
-                                        onClick={() => setShowPowerPlayerToast(false)}
+                                        onClick={() => {
+                                            localStorage.setItem('power_player_dismissed', 'true');
+                                            setShowPowerPlayerToast(false);
+                                        }}
                                         style={{
                                             background: 'transparent',
                                             color: 'var(--text-muted)',
