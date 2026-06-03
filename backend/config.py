@@ -39,7 +39,7 @@ class Config:
     # Google OAuth Config
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
-    GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'https://bagsbrats-production.up.railway.app/auth/google/callback')
+    GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'https://api.bagsandbrats.com/auth/google/callback')
     FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://www.bagsandbrats.com')
     
     # Apple OAuth Config
@@ -47,4 +47,4 @@ class Config:
     APPLE_TEAM_ID = os.environ.get('APPLE_TEAM_ID')
     APPLE_KEY_ID = os.environ.get('APPLE_KEY_ID')
     APPLE_PRIVATE_KEY = os.environ.get('APPLE_PRIVATE_KEY')
-    APPLE_REDIRECT_URI = os.environ.get('APPLE_REDIRECT_URI', 'https://bagsbrats-production.up.railway.app/auth/apple/callback')
+    APPLE_REDIRECT_URI = os.environ.get('APPLE_REDIRECT_URI', 'https://api.bagsandbrats.com/auth/apple/callback')
