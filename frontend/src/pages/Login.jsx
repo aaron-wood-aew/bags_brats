@@ -37,7 +37,7 @@ const Login = () => {
                 style={{ padding: '40px', width: '100%', maxWidth: '400px' }}
             >
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                    <h2 className="vibrant-text" style={{ fontSize: '32px', marginBottom: '8px' }}>Welcome Back</h2>
+                    <h2 className="vibrant-text" style={{ fontSize: '32px', marginBottom: '8px' }}>Bags and Brats</h2>
                     <p style={{ color: 'var(--text-muted)' }}>Sign in to join the tournament</p>
                 </div>
 

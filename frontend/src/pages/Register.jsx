@@ -39,7 +39,7 @@ const Register = () => {
                 style={{ padding: '40px', width: '100%', maxWidth: '450px' }}
             >
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                    <h2 className="vibrant-text" style={{ fontSize: '32px', marginBottom: '8px' }}>Join the Guild</h2>
+                    <h2 className="vibrant-text" style={{ fontSize: '32px', marginBottom: '8px' }}>Join the Tournament</h2>
                     <p style={{ color: 'var(--text-muted)' }}>Create your account for Bags & Brats</p>
                 </div>
 
