@@ -77,7 +77,9 @@ const TournamentStandings = () => {
                             </div>
                             <div>
                                 <div style={{ fontWeight: '600' }}>{player.name}</div>
-                                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{player.games_played} Games Played</div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                    {player.games_played} Games Played • {player.total_points || 0} Points
+                                </div>
                             </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
