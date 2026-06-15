@@ -487,6 +487,7 @@ const AdminDashboard = () => {
                                             const isSelected = idx === backupDayIndex;
                                             const displayDate = new Date(date + 'T12:00:00');
                                             const monthDay = `${displayDate.getMonth() + 1}/${displayDate.getDate()}`;
+                                            const dayName = displayDate.toLocaleDateString('en-US', { weekday: 'short' });
                                             const isDisabled = idx > activeTournament.current_day_index;
 
                                             return (
@@ -512,6 +513,7 @@ const AdminDashboard = () => {
                                                         opacity: isDisabled ? 0.3 : 1
                                                     }}
                                                 >
+                                                    <span style={{ fontSize: '10px', textTransform: 'uppercase', opacity: 0.7 }}>{dayName}</span>
                                                     <span style={{ fontSize: '12px', fontWeight: '800' }}>{monthDay}</span>
                                                 </button>
                                             );
@@ -856,6 +858,7 @@ const AdminDashboard = () => {
 
                                             const displayDate = new Date(date + 'T12:00:00');
                                             const monthDay = `${displayDate.getMonth() + 1}/${displayDate.getDate()}`;
+                                            const dayName = displayDate.toLocaleDateString('en-US', { weekday: 'short' });
 
                                             return (
                                                 <div key={date} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -879,6 +882,7 @@ const AdminDashboard = () => {
                                                             textDecoration: isCancelled ? 'line-through' : 'none'
                                                         }}
                                                     >
+                                                        <span style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', opacity: 0.7 }}>{dayName}</span>
                                                         <span style={{ fontSize: '14px', fontWeight: '800' }}>{monthDay}</span>
                                                         {isCurrent && (
                                                             <span style={{
