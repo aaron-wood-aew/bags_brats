@@ -1347,6 +1347,90 @@ def delete_all_tournaments():
     return jsonify({"msg": "All tournaments and games cleared."}), 200
 
 
+@bp.route('/admin/tournament/schedule', methods=['PUT'])
+@jwt_required()
+def update_tournament_schedule():
+    """Modify an active tournament's schedule — cancel a future day or add a new day."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"error": "No active tournament found"}), 404
+
+    data = request.json or {}
+    cancelled_dates = tournament.cancelled_dates or []
+
+    # --- Cancel a day ---
+    if 'cancel_day_index' in data:
+        cancel_idx = data['cancel_day_index']
+
+        if not isinstance(cancel_idx, int) or cancel_idx < 0 or cancel_idx >= len(tournament.dates):
+            return jsonify({"error": "Invalid day index"}), 400
+
+        if cancel_idx <= tournament.current_day_index:
+            return jsonify({"error": "Cannot cancel a past or current day"}), 400
+
+        if cancel_idx in cancelled_dates:
+            return jsonify({"error": "Day is already cancelled"}), 400
+
+        # Add to cancelled list
+        cancelled_dates.append(cancel_idx)
+
+        # Clean up any games/teams for this day
+        mongo.db.games.delete_many({
+            "tournament_id": str(tournament._id),
+            "day_index": cancel_idx
+        })
+        mongo.db.teams.delete_many({
+            "tournament_id": str(tournament._id),
+            "day_index": cancel_idx
+        })
+
+        # Update tournament
+        mongo.db.tournaments.update_one(
+            {"_id": tournament._id},
+            {"$set": {"cancelled_dates": cancelled_dates}}
+        )
+
+        cancelled_date = tournament.dates[cancel_idx] if cancel_idx < len(tournament.dates) else "unknown"
+        return jsonify({
+            "msg": f"Day {cancel_idx + 1} ({cancelled_date}) has been cancelled",
+            "cancelled_dates": cancelled_dates
+        }), 200
+
+    # --- Add a new day ---
+    if 'add_date' in data:
+        new_date = data['add_date']
+
+        # Validate date format
+        try:
+            datetime.strptime(new_date, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+        if new_date in tournament.dates:
+            return jsonify({"error": "This date is already in the tournament"}), 400
+
+        # Add and re-sort chronologically
+        dates = tournament.dates + [new_date]
+        dates.sort()
+
+        mongo.db.tournaments.update_one(
+            {"_id": tournament._id},
+            {"$set": {"dates": dates}}
+        )
+
+        return jsonify({
+            "msg": f"New tournament day added: {new_date}",
+            "dates": dates
+        }), 200
+
+    return jsonify({"error": "Provide 'cancel_day_index' or 'add_date'"}), 400
+
+
 @bp.route('/admin/db/backup', methods=['GET'])
 @jwt_required()
 def full_db_backup():

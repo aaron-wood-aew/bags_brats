@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star, FileText, Download, Printer, Database, Upload } from 'lucide-react';
+import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star, FileText, Download, Printer, Database, Upload, XCircle, CalendarPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminProxyRegister from '../components/AdminProxyRegister';
 import AdminUserManagement from '../components/AdminUserManagement';
@@ -29,6 +29,7 @@ const AdminDashboard = () => {
     const [backupDayIndex, setBackupDayIndex] = useState(0);
     const [dbRestoreLoading, setDbRestoreLoading] = useState(false);
     const restoreFileRef = useRef(null);
+    const [addDayDate, setAddDayDate] = useState('');
 
     // Sync backupDayIndex with tournament's current day upon load
     useEffect(() => {
@@ -169,6 +170,47 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleCancelDay = async (dayIndex) => {
+        const dateStr = activeTournament.dates[dayIndex];
+        const displayDate = new Date(dateStr + 'T12:00:00');
+        const formatted = `${displayDate.getMonth() + 1}/${displayDate.getDate()}`;
+        const proceed = await confirm({
+            title: `Cancel Day ${dayIndex + 1} (${formatted})?`,
+            message: `This will cancel this tournament day. Any generated teams or games for this day will be deleted. Players will no longer see this day. This cannot be undone.`,
+            confirmText: 'Cancel This Day',
+            type: 'danger'
+        });
+        if (!proceed) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`${API_URL}/admin/tournament/schedule`, { cancel_day_index: dayIndex }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            showToast(`Day ${dayIndex + 1} (${formatted}) has been cancelled`, 'success');
+            fetchActiveTournament();
+        } catch (err) {
+            showToast(err.response?.data?.error || 'Failed to cancel day', 'error');
+        }
+    };
+
+    const handleAddDay = async () => {
+        if (!addDayDate) {
+            showToast('Please select a date', 'error');
+            return;
+        }
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`${API_URL}/admin/tournament/schedule`, { add_date: addDayDate }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            showToast(`New tournament day added: ${addDayDate}`, 'success');
+            setAddDayDate('');
+            fetchActiveTournament();
+        } catch (err) {
+            showToast(err.response?.data?.error || 'Failed to add day', 'error');
+        }
+    };
+
 
     const fetchActiveTournament = async () => {
         try {
@@ -214,8 +256,11 @@ const AdminDashboard = () => {
 
                 // Check if ALL tournament days have complete games (for Grand Champion Reveal)
                 const totalDays = activeTournament.dates?.length || 1;
+                const cancelledDays = activeTournament.cancelled_dates || [];
                 let allDaysComplete = totalDays > 0;
                 for (let dayIdx = 0; dayIdx < totalDays; dayIdx++) {
+                    // Skip cancelled days
+                    if (cancelledDays.includes(dayIdx)) continue;
                     const dayGames = res.data.filter(g => g.day_index === dayIdx);
                     const dayRoundsWithGames = new Set(dayGames.map(g => g.round_number));
                     const dayAllRoundsPlayed = dayRoundsWithGames.size >= roundsPerDay;
@@ -437,10 +482,11 @@ const AdminDashboard = () => {
                                     {/* Day Selection Row */}
                                     <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
                                         {activeTournament.dates.map((date, idx) => {
+                                            const isCancelled = (activeTournament.cancelled_dates || []).includes(idx);
+                                            if (isCancelled) return null;
                                             const isSelected = idx === backupDayIndex;
                                             const displayDate = new Date(date + 'T12:00:00');
-                                            const dayName = displayDate.toLocaleDateString('en-US', { weekday: 'short' });
-                                            const dayNum = displayDate.getDate();
+                                            const monthDay = `${displayDate.getMonth() + 1}/${displayDate.getDate()}`;
                                             const isDisabled = idx > activeTournament.current_day_index;
 
                                             return (
@@ -466,8 +512,7 @@ const AdminDashboard = () => {
                                                         opacity: isDisabled ? 0.3 : 1
                                                     }}
                                                 >
-                                                    <span style={{ fontSize: '10px', textTransform: 'uppercase' }}>{dayName}</span>
-                                                    <span style={{ fontSize: '16px', fontWeight: '800' }}>{dayNum}</span>
+                                                    <span style={{ fontSize: '12px', fontWeight: '800' }}>{monthDay}</span>
                                                 </button>
                                             );
                                         })}
@@ -806,57 +851,139 @@ const AdminDashboard = () => {
                                             const isSelected = idx === (selectedDayIndex ?? activeTournament.current_day_index);
                                             const isCurrent = idx === activeTournament.current_day_index;
                                             const isPast = idx < activeTournament.current_day_index;
+                                            const isCancelled = (activeTournament.cancelled_dates || []).includes(idx);
+                                            const isFuture = idx > activeTournament.current_day_index && !isCancelled;
 
                                             const displayDate = new Date(date + 'T12:00:00');
-                                            const dayName = displayDate.toLocaleDateString('en-US', { weekday: 'short' });
-                                            const dayNum = displayDate.getDate();
+                                            const monthDay = `${displayDate.getMonth() + 1}/${displayDate.getDate()}`;
 
                                             return (
-                                                <button
-                                                    key={date}
-                                                    onClick={() => setSelectedDayIndex(idx)}
-                                                    style={{
-                                                        padding: '10px 16px',
-                                                        borderRadius: '8px',
-                                                        background: isSelected ? 'var(--brand-teal)' : 'rgba(255,255,255,0.03)',
-                                                        border: '1px solid transparent',
-                                                        color: isSelected ? 'white' : 'var(--text-muted)',
-                                                        cursor: 'pointer',
-                                                        fontSize: '13px',
-                                                        fontWeight: '700',
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        alignItems: 'center',
-                                                        minWidth: '60px',
-                                                        opacity: isPast ? 0.7 : 1,
-                                                        position: 'relative'
-                                                    }}
-                                                >
-                                                    <span style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>{dayName}</span>
-                                                    <span style={{ fontSize: '18px', fontWeight: '800' }}>{dayNum}</span>
-                                                    {isCurrent && (
-                                                        <span style={{
-                                                            position: 'absolute',
-                                                            top: '-6px',
-                                                            right: '-6px',
-                                                            width: '12px',
-                                                            height: '12px',
-                                                            background: '#10b981',
-                                                            borderRadius: '50%',
-                                                            border: '2px solid var(--bg)'
-                                                        }} />
+                                                <div key={date} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                    <button
+                                                        onClick={() => !isCancelled && setSelectedDayIndex(idx)}
+                                                        style={{
+                                                            padding: '10px 16px',
+                                                            borderRadius: '8px',
+                                                            background: isCancelled ? 'rgba(239, 68, 68, 0.05)' : (isSelected ? 'var(--brand-teal)' : 'rgba(255,255,255,0.03)'),
+                                                            border: isCancelled ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid transparent',
+                                                            color: isCancelled ? 'rgba(239, 68, 68, 0.4)' : (isSelected ? 'white' : 'var(--text-muted)'),
+                                                            cursor: isCancelled ? 'default' : 'pointer',
+                                                            fontSize: '13px',
+                                                            fontWeight: '700',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'center',
+                                                            minWidth: '60px',
+                                                            opacity: isCancelled ? 0.5 : (isPast ? 0.7 : 1),
+                                                            position: 'relative',
+                                                            textDecoration: isCancelled ? 'line-through' : 'none'
+                                                        }}
+                                                    >
+                                                        <span style={{ fontSize: '14px', fontWeight: '800' }}>{monthDay}</span>
+                                                        {isCurrent && (
+                                                            <span style={{
+                                                                position: 'absolute',
+                                                                top: '-6px',
+                                                                right: '-6px',
+                                                                width: '12px',
+                                                                height: '12px',
+                                                                background: '#10b981',
+                                                                borderRadius: '50%',
+                                                                border: '2px solid var(--bg)'
+                                                            }} />
+                                                        )}
+                                                        {isPast && !isCancelled && (
+                                                            <Check size={12} style={{ color: '#10b981', marginTop: '2px' }} />
+                                                        )}
+                                                        {isCancelled && (
+                                                            <X size={12} style={{ color: '#ef4444', marginTop: '2px' }} />
+                                                        )}
+                                                    </button>
+                                                    {isFuture && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleCancelDay(idx); }}
+                                                            title="Cancel this day"
+                                                            style={{
+                                                                background: 'none',
+                                                                border: 'none',
+                                                                color: 'var(--text-muted)',
+                                                                cursor: 'pointer',
+                                                                padding: '2px',
+                                                                marginTop: '4px',
+                                                                opacity: 0.4,
+                                                                transition: 'opacity 0.2s'
+                                                            }}
+                                                            onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                                                            onMouseLeave={e => e.currentTarget.style.opacity = '0.4'}
+                                                        >
+                                                            <XCircle size={14} />
+                                                        </button>
                                                     )}
-                                                    {isPast && (
-                                                        <Check size={12} style={{ color: '#10b981', marginTop: '2px' }} />
-                                                    )}
-                                                </button>
+                                                </div>
                                             );
 
                                         })}
+
+                                        {/* Add Day Button */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                            <button
+                                                onClick={() => {
+                                                    const input = document.getElementById('add-day-input');
+                                                    if (input) input.showPicker();
+                                                }}
+                                                title="Add tournament day"
+                                                style={{
+                                                    padding: '10px 12px',
+                                                    borderRadius: '8px',
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px dashed var(--border)',
+                                                    color: 'var(--text-muted)',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    minWidth: '48px',
+                                                    minHeight: '42px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <Plus size={18} />
+                                            </button>
+                                            <input
+                                                id="add-day-input"
+                                                type="date"
+                                                value={addDayDate}
+                                                onChange={(e) => {
+                                                    setAddDayDate(e.target.value);
+                                                    if (e.target.value) {
+                                                        // Auto-submit on date selection
+                                                        const token = localStorage.getItem('token');
+                                                        axios.put(`${API_URL}/admin/tournament/schedule`, { add_date: e.target.value }, {
+                                                            headers: { Authorization: `Bearer ${token}` }
+                                                        }).then(res => {
+                                                            showToast(res.data.msg, 'success');
+                                                            setAddDayDate('');
+                                                            fetchActiveTournament();
+                                                        }).catch(err => {
+                                                            showToast(err.response?.data?.error || 'Failed to add day', 'error');
+                                                            setAddDayDate('');
+                                                        });
+                                                    }
+                                                }}
+                                                style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+                                            />
+                                        </div>
                                     </div>
 
                                     {/* Round Manager - only show for current day */}
-                                    {(selectedDayIndex ?? activeTournament.current_day_index) === activeTournament.current_day_index ? (
+                                    {(activeTournament.cancelled_dates || []).includes(selectedDayIndex ?? activeTournament.current_day_index) ? (
+                                        /* Cancelled day */
+                                        <div style={{ padding: '20px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
+                                            <XCircle size={32} style={{ color: '#ef4444', marginBottom: '8px', opacity: 0.6 }} />
+                                            <div style={{ fontWeight: '700', marginBottom: '4px', color: '#ef4444' }}>Day Cancelled</div>
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>This tournament day has been cancelled</div>
+                                        </div>
+                                    ) : (selectedDayIndex ?? activeTournament.current_day_index) === activeTournament.current_day_index ? (
                                         <RoundManager tournament={activeTournament} onUpdate={fetchActiveTournament} />
                                     ) : (selectedDayIndex ?? 0) < activeTournament.current_day_index ? (
                                         /* Past day - show completed games */

@@ -632,7 +632,7 @@ const PlayerDashboard = () => {
                             )}
 
                             {/* Attendance Planner Card */}
-                            {tournament.dates && tournament.dates.some((_, idx) => idx > tournament.current_day_index) && (
+                            {tournament.dates && tournament.dates.some((_, idx) => idx > tournament.current_day_index && !(tournament.cancelled_dates || []).includes(idx)) && (
                                 <div className="glass-card" style={{ padding: '24px', border: '1px solid var(--border)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                                         <Calendar size={22} style={{ color: 'var(--brand-teal)' }} />
@@ -645,6 +645,7 @@ const PlayerDashboard = () => {
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                                         {tournament.dates.map((dateStr, idx) => {
                                             if (idx <= tournament.current_day_index) return null;
+                                            if ((tournament.cancelled_dates || []).includes(idx)) return null;
                                             
                                             const status = schedule[dateStr];
                                             let borderColor = 'var(--border)';

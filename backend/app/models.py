@@ -86,6 +86,7 @@ class Tournament(BaseModel):
         self.current_day_index = data.get('current_day_index', 0)
         self.current_round = data.get('current_round', 0)  # 0 = no rounds started
         self.rounds_per_day = data.get('rounds_per_day', 2)  # Number of rounds per day
+        self.cancelled_dates = data.get('cancelled_dates', [])  # List of cancelled day_index values
         self.start_times = data.get('start_times', []) # List of ISO time strings for each date
 
     @classmethod
