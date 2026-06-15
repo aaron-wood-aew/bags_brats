@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key, ArrowUpDown, DollarSign, Link2Off } from 'lucide-react';
+import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key, ArrowUpDown, DollarSign, Link2Off, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import API_URL from '../config';
 import { useToast } from '../context/ToastContext';
@@ -12,6 +12,9 @@ const AdminUserManagement = () => {
     const [sortField, setSortField] = useState('name');
     const [sortDirection, setSortDirection] = useState('asc');
     const [activeTournament, setActiveTournament] = useState(null);
+    const [selectedPlayer, setSelectedPlayer] = useState(null);
+    const [playerHistory, setPlayerHistory] = useState(null);
+    const [historyLoading, setHistoryLoading] = useState(false);
 
     const fetchActiveTournament = async () => {
         try {
@@ -54,6 +57,23 @@ const AdminUserManagement = () => {
             setLoading(false);
         } catch (err) {
             console.error("Failed to fetch users", err);
+        }
+    };
+
+    const fetchPlayerHistory = async (user) => {
+        setSelectedPlayer(user);
+        setHistoryLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/admin/users/${user._id}/game-history`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setPlayerHistory(res.data);
+        } catch (err) {
+            showToast('Failed to load player history', 'error');
+            setSelectedPlayer(null);
+        } finally {
+            setHistoryLoading(false);
         }
     };
 
@@ -348,7 +368,12 @@ const AdminUserManagement = () => {
                         {sortedUsers.map((user) => (
                             <tr key={user._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                 <td style={{ padding: '16px 12px' }}>
-                                    <div style={{ fontWeight: '600' }}>{user.name}</div>
+                                    <div
+                                        onClick={() => fetchPlayerHistory(user)}
+                                        style={{ fontWeight: '600', cursor: 'pointer', color: 'var(--brand-teal)', transition: 'opacity 0.2s' }}
+                                        onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                    >{user.name}</div>
                                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{user.email || 'No Email'}</div>
                                 </td>
                                 <td style={{ padding: '12px', cursor: 'pointer' }} onClick={() => toggleCheckIn(user._id, user.checked_in)}>
@@ -503,6 +528,135 @@ const AdminUserManagement = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Player History Modal */}
+            {selectedPlayer && (
+                <div
+                    onClick={(e) => { if (e.target === e.currentTarget) { setSelectedPlayer(null); setPlayerHistory(null); } }}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.7)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '20px'
+                    }}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        style={{
+                            background: 'var(--bg-card)',
+                            borderRadius: '16px',
+                            border: '1px solid var(--border)',
+                            padding: '32px',
+                            maxWidth: '600px',
+                            width: '100%',
+                            maxHeight: '80vh',
+                            overflowY: 'auto',
+                            position: 'relative'
+                        }}
+                    >
+                        <button
+                            onClick={() => { setSelectedPlayer(null); setPlayerHistory(null); }}
+                            style={{
+                                position: 'absolute',
+                                top: '16px',
+                                right: '16px',
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <h3 style={{ fontSize: '22px', marginBottom: '4px' }}>{selectedPlayer.name}</h3>
+                        <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>{selectedPlayer.email || 'No Email'}</div>
+
+                        {historyLoading ? (
+                            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading history...</div>
+                        ) : playerHistory && playerHistory.games.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No games played yet</div>
+                        ) : playerHistory ? (
+                            <>
+                                {/* Summary Stats */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px', textAlign: 'center', border: '1px solid var(--border)' }}>
+                                        <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--brand-teal)' }}>{playerHistory.summary.total_points}</div>
+                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>Total Pts</div>
+                                    </div>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px', textAlign: 'center', border: '1px solid var(--border)' }}>
+                                        <div style={{ fontSize: '24px', fontWeight: '800', color: '#10b981' }}>{playerHistory.summary.total_wins}</div>
+                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>Wins</div>
+                                    </div>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px', textAlign: 'center', border: '1px solid var(--border)' }}>
+                                        <div style={{ fontSize: '24px', fontWeight: '800', color: '#ef4444' }}>{playerHistory.summary.total_losses}</div>
+                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>Losses</div>
+                                    </div>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px', textAlign: 'center', border: '1px solid var(--border)' }}>
+                                        <div style={{ fontSize: '24px', fontWeight: '800' }}>{playerHistory.summary.games_played}</div>
+                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>Games</div>
+                                    </div>
+                                </div>
+
+                                {/* Game History Table */}
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', textAlign: 'left' }}>
+                                                <th style={{ padding: '8px 6px' }}>Day</th>
+                                                <th style={{ padding: '8px 6px' }}>Rd</th>
+                                                <th style={{ padding: '8px 6px' }}>Partner</th>
+                                                <th style={{ padding: '8px 6px' }}>vs</th>
+                                                <th style={{ padding: '8px 6px', textAlign: 'center' }}>Score</th>
+                                                <th style={{ padding: '8px 6px', textAlign: 'center' }}>Result</th>
+                                                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {playerHistory.games.map((game, i) => (
+                                                <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                    <td style={{ padding: '10px 6px', color: 'var(--text-muted)' }}>{game.day_number}</td>
+                                                    <td style={{ padding: '10px 6px', color: 'var(--text-muted)' }}>{game.round_number}</td>
+                                                    <td style={{ padding: '10px 6px' }}>{game.partner_names.length > 0 ? game.partner_names.join(', ') : '⚡ Solo'}</td>
+                                                    <td style={{ padding: '10px 6px' }}>{game.opponent_names.join(', ')}</td>
+                                                    <td style={{ padding: '10px 6px', textAlign: 'center', fontWeight: '700' }}>
+                                                        <span style={{ color: game.result === 'win' ? '#10b981' : game.result === 'loss' ? '#ef4444' : 'var(--text)' }}>{game.player_score}</span>
+                                                        <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>-</span>
+                                                        <span style={{ color: 'var(--text-muted)' }}>{game.opponent_score}</span>
+                                                    </td>
+                                                    <td style={{ padding: '10px 6px', textAlign: 'center' }}>
+                                                        <span style={{
+                                                            padding: '2px 8px',
+                                                            borderRadius: '4px',
+                                                            fontSize: '11px',
+                                                            fontWeight: '700',
+                                                            textTransform: 'uppercase',
+                                                            background: game.result === 'win' ? 'rgba(16, 185, 129, 0.15)' : game.result === 'loss' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.05)',
+                                                            color: game.result === 'win' ? '#10b981' : game.result === 'loss' ? '#ef4444' : 'var(--text-muted)'
+                                                        }}>
+                                                            {game.result === 'win' ? 'W' : game.result === 'loss' ? 'L' : 'T'}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '10px 6px', textAlign: 'right', fontWeight: '700', color: 'var(--brand-teal)' }}>{game.running_total}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </>
+                        ) : null}
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1086,6 +1086,112 @@ def update_user(user_id):
     
     return jsonify({"msg": "User updated successfully", "updated_fields": list(update_fields.keys())}), 200
 
+@bp.route('/admin/users/<user_id>/game-history', methods=['GET'])
+@jwt_required()
+def get_player_game_history(user_id):
+    """Get a player's full game history with scores."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+
+    target_user = User.find_by_id(mongo, user_id)
+    if not target_user:
+        return jsonify({"error": "User not found"}), 404
+
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"player": target_user.to_dict(), "games": [], "summary": {}}), 200
+
+    # Find all finalized games this player was in
+    games = list(mongo.db.games.find({
+        "tournament_id": str(tournament._id),
+        "status": "finalized",
+        "$or": [
+            {"team1_player_ids": user_id},
+            {"team2_player_ids": user_id}
+        ]
+    }))
+
+    # Sort by day_index, then round_number
+    games.sort(key=lambda g: (g.get('day_index', 0), g.get('round_number', 0)))
+
+    total_points = 0
+    total_wins = 0
+    total_losses = 0
+    total_ties = 0
+    history = []
+
+    for g in games:
+        is_team1 = user_id in [str(pid) for pid in g.get('team1_player_ids', [])]
+        
+        if is_team1:
+            player_score = g.get('score1', 0)
+            opponent_score = g.get('score2', 0)
+            partner_ids = [pid for pid in g.get('team1_player_ids', []) if str(pid) != user_id]
+            opponent_ids = g.get('team2_player_ids', [])
+        else:
+            player_score = g.get('score2', 0)
+            opponent_score = g.get('score1', 0)
+            partner_ids = [pid for pid in g.get('team2_player_ids', []) if str(pid) != user_id]
+            opponent_ids = g.get('team1_player_ids', [])
+
+        # Resolve names
+        partner_names = []
+        for pid in partner_ids:
+            u = User.find_by_id(mongo, str(pid))
+            partner_names.append(u.name if u else "Unknown")
+
+        opponent_names = []
+        for pid in opponent_ids:
+            u = User.find_by_id(mongo, str(pid))
+            opponent_names.append(u.name if u else "Unknown")
+
+        # Determine result
+        if player_score > opponent_score:
+            result = "win"
+            total_wins += 1
+        elif player_score < opponent_score:
+            result = "loss"
+            total_losses += 1
+        else:
+            result = "tie"
+            total_ties += 1
+
+        total_points += player_score
+
+        # Get the date for this day
+        day_idx = g.get('day_index', 0)
+        date_str = tournament.dates[day_idx] if day_idx < len(tournament.dates) else None
+
+        history.append({
+            "day_index": day_idx,
+            "day_number": day_idx + 1,
+            "date": date_str,
+            "round_number": g.get('round_number', 0),
+            "partner_names": partner_names,
+            "opponent_names": opponent_names,
+            "player_score": player_score,
+            "opponent_score": opponent_score,
+            "result": result,
+            "court": g.get('court'),
+            "running_total": total_points
+        })
+
+    summary = {
+        "total_points": total_points,
+        "total_wins": total_wins,
+        "total_losses": total_losses,
+        "total_ties": total_ties,
+        "games_played": len(history)
+    }
+
+    return jsonify({
+        "player": target_user.to_dict(),
+        "games": history,
+        "summary": summary
+    }), 200
+
 @bp.route('/admin/users/<user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
