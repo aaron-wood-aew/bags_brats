@@ -299,9 +299,6 @@ const AdminUserManagement = () => {
                     <h3 style={{ fontSize: '24px' }}>Global Roster</h3>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginLeft: 'auto' }}>
-                    <button onClick={handleSeed} className="btn-primary" style={{ padding: '8px 16px', fontSize: '13px' }}>
-                        Seed 24 Players
-                    </button>
                     <button onClick={handleBulkDelete} className="btn-primary" style={{ padding: '8px 16px', fontSize: '13px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#ef4444' }}>
                         Reset Roster
                     </button>
