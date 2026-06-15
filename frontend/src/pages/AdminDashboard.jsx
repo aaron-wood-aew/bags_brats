@@ -23,6 +23,7 @@ const AdminDashboard = () => {
     const [viewDate, setViewDate] = useState(new Date()); // Controls which month we see
     const [selectedDayIndex, setSelectedDayIndex] = useState(null); // For day tabs navigation
     const [allGamesComplete, setAllGamesComplete] = useState(false);
+    const [allTournamentGamesComplete, setAllTournamentGamesComplete] = useState(false);
     const navigate = useNavigate();
     const [backupData, setBackupData] = useState(null);
     const [backupDayIndex, setBackupDayIndex] = useState(0);
@@ -210,6 +211,23 @@ const AdminDashboard = () => {
                     allRoundsHaveGames &&
                     todayGames.every(g => g.status === 'finalized');
                 setAllGamesComplete(allFinalized);
+
+                // Check if ALL tournament days have complete games (for Grand Champion Reveal)
+                const totalDays = activeTournament.dates?.length || 1;
+                let allDaysComplete = totalDays > 0;
+                for (let dayIdx = 0; dayIdx < totalDays; dayIdx++) {
+                    const dayGames = res.data.filter(g => g.day_index === dayIdx);
+                    const dayRoundsWithGames = new Set(dayGames.map(g => g.round_number));
+                    const dayAllRoundsPlayed = dayRoundsWithGames.size >= roundsPerDay;
+                    const dayAllFinalized = dayGames.length > 0 &&
+                        dayAllRoundsPlayed &&
+                        dayGames.every(g => g.status === 'finalized');
+                    if (!dayAllFinalized) {
+                        allDaysComplete = false;
+                        break;
+                    }
+                }
+                setAllTournamentGamesComplete(allDaysComplete);
             } catch (err) {
                 console.error('Failed to check games status', err);
             }
@@ -948,7 +966,7 @@ const AdminDashboard = () => {
                                 {/* Launch Grand Champion Reveal Button */}
                                 <button
                                     onClick={() => navigate('/admin/grand-reveal')}
-                                    disabled={!activeTournament}
+                                    disabled={!allTournamentGamesComplete}
                                     className="btn-primary"
                                     style={{
                                         width: '100%',
@@ -956,16 +974,16 @@ const AdminDashboard = () => {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         gap: '8px',
-                                        background: activeTournament ? 'linear-gradient(135deg, var(--brand-teal), #48abb3)' : 'rgba(255,255,255,0.05)',
-                                        border: activeTournament ? 'none' : '1px solid var(--border)',
-                                        color: activeTournament ? '#0a141a' : 'var(--text-muted)',
+                                        background: allTournamentGamesComplete ? 'linear-gradient(135deg, var(--brand-teal), #48abb3)' : 'rgba(255,255,255,0.05)',
+                                        border: allTournamentGamesComplete ? 'none' : '1px solid var(--border)',
+                                        color: allTournamentGamesComplete ? '#0a141a' : 'var(--text-muted)',
                                         fontWeight: '800',
-                                        cursor: activeTournament ? 'pointer' : 'not-allowed',
-                                        opacity: activeTournament ? 1 : 0.5
+                                        cursor: allTournamentGamesComplete ? 'pointer' : 'not-allowed',
+                                        opacity: allTournamentGamesComplete ? 1 : 0.5
                                     }}
                                 >
                                     <Trophy size={18} />
-                                    {activeTournament ? 'Launch Grand Champion Reveal 👑' : 'Create a tournament first...'}
+                                    {allTournamentGamesComplete ? 'Launch Grand Champion Reveal 👑' : 'Complete all tournament days first...'}  
                                 </button>
                             </div>
                         </div>
