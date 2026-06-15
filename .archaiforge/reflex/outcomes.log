@@ -19,3 +19,15 @@
 [T28] [tier:2] Implemented direct Finalize and End Game action buttons on active game cards inside AdminGameManagement.jsx. Integrates with the custom glassmorphic confirmation modal, prompting the director before instantly stopping the game and broadcasting the standings update.
 [T30] [tier:2] Rebranded court references to Station terminology across AdminGameManagement.jsx, SpectatorView.jsx, and PlayerDashboard.jsx. Assigned a default court number matching game_number in backend generate_round_pairings, and implemented a frontend null-fallback to game.game_number.
 [T33] [tier:2] Refactored overall tournament champion reveal wording to '2026 Bags & Brats Grand Champions', and added an inline glassmorphic Station indicator in the Player active game view.
+[T36] [tier:2] Patched frontend Dockerfile to declare ARG and ENV for VITE_API_URL, resolving Vite compilation fallback issue where the backend API URL was not baked into static assets at build time. Pushed changes to GitHub to trigger Railway redeployment.
+[T38] [tier:1] Rebranded the main login header from "Welcome Back" to "Bags and Brats" and improved the registration view heading from the guild reference to "Join the Tournament". Committed and pushed to remote to redeploy.
+[T40] [tier:1] Fixed mobile layout cutoff of the Power Player toast on the player dashboard by setting horizontal centering via Framer Motion x prop rather than static CSS transform. Pushed build fix to Git.
+[T42] [tier:1] Implemented persistent dismissal for the Power Player promotional toast on the player dashboard by writing a dismissal flag to localStorage. Staged, committed, and pushed changes to remote.
+[T44] [tier:1] Updated FRONTEND_URL default fallbacks to https://www.bagsandbrats.com in backend config.py and auth_oauth.py, resolving post-OAuth redirection to staging domains. Pushed to remote.
+[T46] [tier:1] Updated GOOGLE_REDIRECT_URI and APPLE_REDIRECT_URI default fallbacks to point to api.bagsandbrats.com in backend config.py, resolving OAuth mismatch issues. Pushed to remote.
+[T49] [tier:2] Integrated ProxyFix middleware into Flask app initialization to support HTTPS detection behind Railway load balancers.
+[T51] [tier:2] Google OAuth configuration resolved successfully on the custom domain (api.bagsandbrats.com).
+[T53] [tier:2] Resolved User Settings password change bug by generalizing Google OAuth user notice check to support Apple Sign In users (isOAuthUser/oauthProvider).
+[T55] [tier:2] Replaced all browser-native prompt() password inputs with a premium promise-based glassmorphic PromptModal component integrated into ToastContext.
+[T57] [tier:2] Displayed cumulative points next to games played count on the Admin DCC Overview Leaderboard dashboard.
+[T60] [tier:2] Fixed pairing generation failure on the frontend by properly serializing datetime and ObjectId values in the Socket.IO payload before broadcasting.

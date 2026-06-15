@@ -1,5 +1,5 @@
 {
-  "id": "seed-1780189350809",
+  "id": "seed-1781540669603",
   "depth_layer": 1,
   "state": {
     "identity": {
@@ -81,6 +81,42 @@
         "category": "isd",
         "content": "ISD gates: confidence < 0.60 = ask questions before proceeding. Confidence < 0.50 = stop and re-anchor. Velocity Engine: Sprint mode for urgent tasks, Discovery mode for exploration. Kryptos handshake validates source of truth.",
         "score": 0.9
+      },
+      {
+        "id": "pm_cryst_cf0250cb",
+        "category": "learning",
+        "content": "Proven at T:15: Resolved VITE_API_URL port mismatch inside socket.js (changing port 5000 to port 5001) to fully restore Socket.IO real-time capabilities so that player views update instantly upon admin overrides.",
+        "tags": [
+          "proven",
+          "auto",
+          "tier2"
+        ],
+        "score": 0.85,
+        "source": "project_memories"
+      },
+      {
+        "id": "pm_cryst_9eff47f5",
+        "category": "learning",
+        "content": "Proven at T:24: Replaced all 25+ browser-native alerts across App.jsx, UserSettings, AdminDashboard, RoundManager, AdminUserManagement, and AdminGameManagement with a custom-coded glassmorphic Toast notifications engine featuring spring transitions, auto-dismiss timers, and a global broadcast bridge for non-React scopes like Axios interceptors. Verified with full container build.",
+        "tags": [
+          "proven",
+          "auto",
+          "tier2"
+        ],
+        "score": 0.85,
+        "source": "project_memories"
+      },
+      {
+        "id": "pm_cryst_0501cb31",
+        "category": "learning",
+        "content": "Proven at T:28: Implemented direct Finalize and End Game action buttons on active game cards inside AdminGameManagement.jsx. Integrates with the custom glassmorphic confirmation modal, prompting the director before instantly stopping the game and broadcasting the standings update.",
+        "tags": [
+          "proven",
+          "auto",
+          "tier2"
+        ],
+        "score": 0.85,
+        "source": "project_memories"
       }
     ],
     "context": {
@@ -94,9 +130,9 @@
         "tier4": "semantic search (LanceDB vectors)"
       }
     },
-    "initialized_at": "2026-05-31T01:02:30.808Z"
+    "initialized_at": "2026-06-15T16:24:29.603Z"
   },
-  "proof_hash": "6ce4cd43252f15e96673f103c995aeed2e8bbad404d6fd36d835bac428f65cc1",
-  "created_at": "2026-05-31T01:02:30.809Z",
+  "proof_hash": "867e069e7ff8bfb6eb61e5682897018e10596f3d78feadc2aa823004f85c9604",
+  "created_at": "2026-06-15T16:24:29.603Z",
   "version": "8.2.1-dwell-binding"
 }

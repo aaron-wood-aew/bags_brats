@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star, FileText, Download, Printer } from 'lucide-react';
+import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star, FileText, Download, Printer, Database, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminProxyRegister from '../components/AdminProxyRegister';
 import AdminUserManagement from '../components/AdminUserManagement';
@@ -26,6 +26,8 @@ const AdminDashboard = () => {
     const navigate = useNavigate();
     const [backupData, setBackupData] = useState(null);
     const [backupDayIndex, setBackupDayIndex] = useState(0);
+    const [dbRestoreLoading, setDbRestoreLoading] = useState(false);
+    const restoreFileRef = useRef(null);
 
     // Sync backupDayIndex with tournament's current day upon load
     useEffect(() => {
@@ -92,6 +94,77 @@ const AdminDashboard = () => {
         } catch (err) {
             console.error("Failed to load print preview", err);
             showToast("Failed to load daily record print layout. Please try again.", "error");
+        }
+    };
+
+    const handleFullDbBackup = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/admin/db/backup`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob'
+            });
+            const blob = new Blob([res.data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const disposition = res.headers['content-disposition'];
+            const filename = disposition
+                ? disposition.split('filename=')[1]?.replace(/"/g, '')
+                : `bags_brats_full_backup_${new Date().toISOString().slice(0,10)}.json`;
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast('Full database backup downloaded successfully!', 'success');
+        } catch (err) {
+            console.error('DB backup failed', err);
+            showToast('Failed to download database backup.', 'error');
+        }
+    };
+
+    const handleDbRestore = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        // Reset so the same file can be re-selected
+        e.target.value = '';
+
+        if (!file.name.endsWith('.json')) {
+            showToast('Please select a .json backup file.', 'error');
+            return;
+        }
+
+        const proceed = await confirm({
+            title: 'Restore Database from Backup?',
+            message: `CRITICAL: This will REPLACE all current data (users, tournaments, games, teams) with the contents of "${file.name}". Your admin account will be preserved. This cannot be undone.`,
+            confirmText: 'Restore Database',
+            type: 'danger'
+        });
+        if (!proceed) return;
+
+        setDbRestoreLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await axios.post(`${API_URL}/admin/db/restore`, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            const stats = res.data.stats || {};
+            showToast(
+                `Database restored! Users: ${stats.users || 0}, Tournaments: ${stats.tournaments || 0}, Games: ${stats.games || 0}, Teams: ${stats.teams || 0}`,
+                'success'
+            );
+            fetchActiveTournament();
+        } catch (err) {
+            console.error('DB restore failed', err);
+            showToast(err.response?.data?.error || 'Failed to restore database.', 'error');
+        } finally {
+            setDbRestoreLoading(false);
         }
     };
 
@@ -434,6 +507,87 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Full Database Backup & Restore */}
+                        <div className="glass-card" style={{ padding: '32px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                                <Database size={20} style={{ color: '#f59e0b' }} />
+                                <h3 style={{ fontSize: '22px' }}>Database Backup & Restore</h3>
+                            </div>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.5', marginBottom: '20px' }}>
+                                Full snapshot of all data — users, tournaments, games, and teams. Use this before the tournament as a safety net.
+                            </p>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <button
+                                    onClick={handleFullDbBackup}
+                                    style={{
+                                        width: '100%',
+                                        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                                        color: '#0a141a',
+                                        border: 'none',
+                                        padding: '14px 18px',
+                                        borderRadius: '10px',
+                                        fontSize: '14px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <Download size={16} />
+                                    Download Full DB Backup
+                                </button>
+
+                                <input
+                                    type="file"
+                                    accept=".json"
+                                    ref={restoreFileRef}
+                                    onChange={handleDbRestore}
+                                    style={{ display: 'none' }}
+                                />
+                                <button
+                                    onClick={() => restoreFileRef.current?.click()}
+                                    disabled={dbRestoreLoading}
+                                    style={{
+                                        width: '100%',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        color: dbRestoreLoading ? 'var(--text-muted)' : 'var(--text)',
+                                        border: '1px solid var(--border)',
+                                        padding: '14px 18px',
+                                        borderRadius: '10px',
+                                        fontSize: '14px',
+                                        fontWeight: '700',
+                                        cursor: dbRestoreLoading ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        transition: 'all 0.2s',
+                                        opacity: dbRestoreLoading ? 0.5 : 1
+                                    }}
+                                >
+                                    <Upload size={16} />
+                                    {dbRestoreLoading ? 'Restoring...' : 'Restore from Backup'}
+                                </button>
+                            </div>
+
+                            <div style={{
+                                marginTop: '16px',
+                                padding: '12px',
+                                background: 'rgba(245, 158, 11, 0.06)',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(245, 158, 11, 0.15)',
+                                fontSize: '12px',
+                                color: 'var(--text-muted)',
+                                lineHeight: '1.5'
+                            }}>
+                                💡 <strong style={{ color: '#f59e0b' }}>Tip:</strong> Take a backup before each tournament day. If anything goes wrong, restore to the last good state instantly.
+                            </div>
                         </div>
                     </div>
                 )}

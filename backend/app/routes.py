@@ -1,9 +1,10 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from app.models import User, Tournament, Game
 from app import mongo, bcrypt
 from bson import ObjectId
 from datetime import datetime, timedelta
+import json
 
 bp = Blueprint('main', __name__)
 
@@ -1344,3 +1345,154 @@ def delete_all_tournaments():
     mongo.db.tournaments.delete_many({})
     mongo.db.games.delete_many({})
     return jsonify({"msg": "All tournaments and games cleared."}), 200
+
+
+@bp.route('/admin/db/backup', methods=['GET'])
+@jwt_required()
+def full_db_backup():
+    """Export the entire database (all 4 collections) as a JSON file download."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+
+    def serialize_doc(doc):
+        """Convert MongoDB document to JSON-serializable dict."""
+        d = dict(doc)
+        if '_id' in d:
+            d['_id'] = str(d['_id'])
+        # Handle datetime fields
+        for key, val in d.items():
+            if isinstance(val, datetime):
+                d[key] = val.isoformat()
+        return d
+
+    backup = {
+        "meta": {
+            "version": "1.0",
+            "created_at": datetime.utcnow().isoformat(),
+            "created_by": current_user.name,
+            "source": "bags_brats_db_backup"
+        },
+        "collections": {
+            "users": [serialize_doc(u) for u in mongo.db.users.find()],
+            "tournaments": [serialize_doc(t) for t in mongo.db.tournaments.find()],
+            "games": [serialize_doc(g) for g in mongo.db.games.find()],
+            "teams": [serialize_doc(t) for t in mongo.db.teams.find()]
+        }
+    }
+
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+    filename = f"bags_brats_full_backup_{timestamp}.json"
+
+    return Response(
+        json.dumps(backup, indent=2, default=str),
+        mimetype='application/json',
+        headers={
+            'Content-Disposition': f'attachment; filename="{filename}"'
+        }
+    )
+
+
+@bp.route('/admin/db/restore', methods=['POST'])
+@jwt_required()
+def full_db_restore():
+    """Restore the entire database from a JSON backup file.
+    
+    The requesting admin's account is always preserved to prevent lockout.
+    """
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No backup file provided"}), 400
+
+    file = request.files['file']
+    if not file.filename.endswith('.json'):
+        return jsonify({"error": "Backup file must be a .json file"}), 400
+
+    try:
+        backup_data = json.loads(file.read().decode('utf-8'))
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        return jsonify({"error": f"Invalid JSON file: {str(e)}"}), 400
+
+    # Validate structure
+    if 'collections' not in backup_data:
+        return jsonify({"error": "Invalid backup format: missing 'collections' key"}), 400
+
+    meta = backup_data.get('meta', {})
+    if meta.get('source') != 'bags_brats_db_backup':
+        return jsonify({"error": "Invalid backup format: not a Bags & Brats backup file"}), 400
+
+    collections = backup_data['collections']
+    stats = {}
+
+    try:
+        # 1. Restore users — preserve the current admin
+        if 'users' in collections:
+            # Delete all users EXCEPT the requesting admin
+            mongo.db.users.delete_many({"_id": {"$ne": ObjectId(current_user_id)}})
+            
+            users_to_insert = []
+            for u in collections['users']:
+                uid = u.pop('_id', None)
+                # Skip the current admin from the backup — we keep the live one
+                if uid == current_user_id:
+                    continue
+                if uid:
+                    u['_id'] = ObjectId(uid)
+                users_to_insert.append(u)
+            
+            if users_to_insert:
+                mongo.db.users.insert_many(users_to_insert)
+            stats['users'] = len(users_to_insert) + 1  # +1 for preserved admin
+
+        # 2. Restore tournaments
+        if 'tournaments' in collections:
+            mongo.db.tournaments.delete_many({})
+            tournaments_to_insert = []
+            for t in collections['tournaments']:
+                tid = t.pop('_id', None)
+                if tid:
+                    t['_id'] = ObjectId(tid)
+                tournaments_to_insert.append(t)
+            if tournaments_to_insert:
+                mongo.db.tournaments.insert_many(tournaments_to_insert)
+            stats['tournaments'] = len(tournaments_to_insert)
+
+        # 3. Restore games
+        if 'games' in collections:
+            mongo.db.games.delete_many({})
+            games_to_insert = []
+            for g in collections['games']:
+                gid = g.pop('_id', None)
+                if gid:
+                    g['_id'] = ObjectId(gid)
+                games_to_insert.append(g)
+            if games_to_insert:
+                mongo.db.games.insert_many(games_to_insert)
+            stats['games'] = len(games_to_insert)
+
+        # 4. Restore teams
+        if 'teams' in collections:
+            mongo.db.teams.delete_many({})
+            teams_to_insert = []
+            for t in collections['teams']:
+                tid = t.pop('_id', None)
+                if tid:
+                    t['_id'] = ObjectId(tid)
+                teams_to_insert.append(t)
+            if teams_to_insert:
+                mongo.db.teams.insert_many(teams_to_insert)
+            stats['teams'] = len(teams_to_insert)
+
+    except Exception as e:
+        return jsonify({"error": f"Restore failed: {str(e)}"}), 500
+
+    backup_date = meta.get('created_at', 'unknown')
+    return jsonify({
+        "msg": f"Database restored from backup ({backup_date})",
+        "stats": stats
+    }), 200
