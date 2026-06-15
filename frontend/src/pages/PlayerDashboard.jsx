@@ -467,7 +467,6 @@ const PlayerDashboard = () => {
             <header style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h2 className="vibrant-text" style={{ fontSize: '28px' }}>Hello, {user.name}</h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Ready for some cornhole?</p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <ThemeToggle />
