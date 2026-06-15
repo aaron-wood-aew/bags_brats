@@ -177,7 +177,8 @@ const AdminDashboard = () => {
         const proceed = await confirm({
             title: `Cancel Day ${dayIndex + 1} (${formatted})?`,
             message: `This will cancel this tournament day. Any generated teams or games for this day will be deleted. Players will no longer see this day. This cannot be undone.`,
-            confirmText: 'Cancel This Day',
+            confirmText: 'Yes — Cancel the Tournament Day',
+            cancelText: 'No',
             type: 'danger'
         });
         if (!proceed) return;
