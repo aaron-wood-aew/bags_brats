@@ -106,16 +106,37 @@ const AdminUserManagement = () => {
         }
     };
 
-    const toggleRole = async (userId, currentRole) => {
+    const toggleRole = async (userId, currentRole, userName) => {
         const newRole = currentRole === 'admin' ? 'player' : 'admin';
+
+        // Prevent self-demotion
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (currentUser._id === userId && newRole === 'player') {
+            showToast("You can't remove admin from your own account", 'error');
+            return;
+        }
+
+        const isPromoting = newRole === 'admin';
+        const proceed = await confirm({
+            title: isPromoting ? `Promote ${userName} to Admin?` : `Remove Admin from ${userName}?`,
+            message: isPromoting
+                ? `${userName} will gain full admin privileges including tournament management, player controls, and data access.`
+                : `${userName} will lose all admin privileges and become a regular player.`,
+            confirmText: isPromoting ? 'Yes — Make Admin' : 'Yes — Remove Admin',
+            cancelText: 'No',
+            type: isPromoting ? 'purple' : 'danger'
+        });
+        if (!proceed) return;
+
         try {
             const token = localStorage.getItem('token');
             await axios.post(`${API_URL}/admin/users/${userId}/role`, { role: newRole }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchUsers();
+            showToast(`${userName} is now ${newRole === 'admin' ? 'an Admin' : 'a Player'}`, 'success');
         } catch (err) {
-            console.error("Failed to update role", err);
+            showToast(err.response?.data?.error || 'Failed to update role', 'error');
         }
     };
 
@@ -465,7 +486,7 @@ const AdminUserManagement = () => {
                                             <Key size={18} />
                                         </button>
                                         <button
-                                            onClick={() => toggleRole(user._id, user.role)}
+                                            onClick={() => toggleRole(user._id, user.role, user.name)}
                                             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
                                             title="Toggle Admin"
                                         >
