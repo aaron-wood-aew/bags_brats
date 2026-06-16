@@ -50,7 +50,7 @@ def is_checkin_window_open(mongo):
     check_in_hour = Config.CHECK_IN_HOUR
     
     # Check if admin has manually opened check-in
-    tournament = mongo.db.tournaments.find_one({"status": {"$in": ["active", "blackout"]}})
+    tournament = mongo.db.tournaments.find_one({"status": {"$in": ["upcoming", "active", "blackout"]}})
     if tournament and tournament.get('check_in_open'):
         return True, None
     
