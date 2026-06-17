@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key, ArrowUpDown, DollarSign, Link2Off, X } from 'lucide-react';
+import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key, ArrowUpDown, DollarSign, Link2Off, X, Pencil } from 'lucide-react';
 import { motion } from 'framer-motion';
 import API_URL from '../config';
 import { useToast } from '../context/ToastContext';
@@ -14,6 +14,9 @@ const AdminUserManagement = () => {
     const [activeTournament, setActiveTournament] = useState(null);
     const [selectedPlayer, setSelectedPlayer] = useState(null);
     const [playerHistory, setPlayerHistory] = useState(null);
+    const [editingUser, setEditingUser] = useState(null);
+    const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
+    const [editSaving, setEditSaving] = useState(false);
     const [historyLoading, setHistoryLoading] = useState(false);
 
     const fetchActiveTournament = async () => {
@@ -273,6 +276,37 @@ const AdminUserManagement = () => {
         }
     };
 
+    const startEdit = (user) => {
+        setEditingUser(user);
+        setEditForm({
+            name: user.name || '',
+            email: user.email || '',
+            phone: user.phone || ''
+        });
+    };
+
+    const saveEdit = async () => {
+        if (!editingUser) return;
+        if (!editForm.name.trim()) {
+            showToast('Name is required', 'warning');
+            return;
+        }
+        setEditSaving(true);
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`${API_URL}/admin/users/${editingUser._id}`, editForm, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            showToast(`${editForm.name} updated successfully`, 'success');
+            setEditingUser(null);
+            fetchUsers();
+        } catch (err) {
+            showToast(err.response?.data?.error || 'Failed to update user', 'error');
+        } finally {
+            setEditSaving(false);
+        }
+    };
+
     const handleSort = (field) => {
         if (sortField === field) {
             setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -491,6 +525,13 @@ const AdminUserManagement = () => {
                                 </td>
                                 <td style={{ padding: '12px', textAlign: 'right' }}>
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                                        <button
+                                            onClick={() => startEdit(user)}
+                                            style={{ background: 'none', border: 'none', color: 'var(--brand-teal)', cursor: 'pointer' }}
+                                            title="Edit Player"
+                                        >
+                                            <Pencil size={18} />
+                                        </button>
                                         {(user.google_id || user.apple_id) && (
                                             <button
                                                 onClick={() => unlinkOAuth(user)}
@@ -654,6 +695,112 @@ const AdminUserManagement = () => {
                                 </div>
                             </>
                         ) : null}
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Edit User Modal */}
+            {editingUser && (
+                <div
+                    onClick={(e) => { if (e.target === e.currentTarget) setEditingUser(null); }}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.7)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '20px'
+                    }}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        style={{
+                            background: 'var(--bg-card)',
+                            borderRadius: '16px',
+                            border: '1px solid var(--border)',
+                            padding: '32px',
+                            maxWidth: '440px',
+                            width: '100%',
+                            position: 'relative'
+                        }}
+                    >
+                        <button
+                            onClick={() => setEditingUser(null)}
+                            style={{
+                                position: 'absolute',
+                                top: '16px',
+                                right: '16px',
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+                            <Pencil size={20} style={{ color: 'var(--brand-teal)' }} />
+                            <h3 style={{ fontSize: '20px' }}>Edit Player</h3>
+                        </div>
+
+                        <div style={{ display: 'grid', gap: '16px' }}>
+                            <div>
+                                <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', marginBottom: '6px', display: 'block' }}>Name</label>
+                                <input
+                                    type="text"
+                                    className="input-field"
+                                    value={editForm.name}
+                                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                    style={{ marginBottom: 0 }}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', marginBottom: '6px', display: 'block' }}>Email</label>
+                                <input
+                                    type="email"
+                                    className="input-field"
+                                    value={editForm.email}
+                                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                    style={{ marginBottom: 0 }}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', marginBottom: '6px', display: 'block' }}>Phone</label>
+                                <input
+                                    type="tel"
+                                    className="input-field"
+                                    value={editForm.phone}
+                                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                    style={{ marginBottom: 0 }}
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                            <button
+                                onClick={() => setEditingUser(null)}
+                                className="btn-secondary"
+                                style={{ flex: 1, padding: '12px' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={saveEdit}
+                                disabled={editSaving}
+                                className="btn-primary"
+                                style={{ flex: 1, padding: '12px', opacity: editSaving ? 0.7 : 1 }}
+                            >
+                                {editSaving ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </div>
                     </motion.div>
                 </div>
             )}

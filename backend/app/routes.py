@@ -1058,7 +1058,7 @@ def update_user_role(user_id):
 @bp.route('/admin/users/<user_id>', methods=['PUT'])
 @jwt_required()
 def update_user(user_id):
-    """Update player details including name, phone, and Power Player status."""
+    """Update player details including name, email, phone, and Power Player status."""
     current_user_id = get_jwt_identity()
     current_user = User.find_by_id(mongo, current_user_id)
     if not current_user or current_user.role != 'admin':
@@ -1072,10 +1072,18 @@ def update_user(user_id):
     update_fields = {}
     
     # Allowed editable fields
-    if 'name' in data:
-        update_fields['name'] = data['name']
+    if 'name' in data and data['name']:
+        update_fields['name'] = data['name'].strip()
+    if 'email' in data and data['email']:
+        new_email = data['email'].strip().lower()
+        # Check for duplicate email (skip if unchanged)
+        if new_email != (user.email or '').lower():
+            existing = User.find_by_email(mongo, new_email)
+            if existing:
+                return jsonify({"error": f"Email '{new_email}' is already in use by another account"}), 400
+        update_fields['email'] = new_email
     if 'phone' in data:
-        update_fields['phone'] = data['phone']
+        update_fields['phone'] = data['phone'].strip() if data['phone'] else None
     if 'is_power_player' in data:
         update_fields['is_power_player'] = bool(data['is_power_player'])
     if 'power_player_used' in data:
