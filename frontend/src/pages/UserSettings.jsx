@@ -13,7 +13,8 @@ const UserSettings = () => {
     const [loading, setLoading] = useState(true);
 
     // Profile form
-    const [name, setName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [phone, setPhone] = useState('');
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileSuccess, setProfileSuccess] = useState(false);
@@ -39,7 +40,15 @@ const UserSettings = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUser(res.data);
-            setName(res.data.name || '');
+            // Use first_name/last_name if available, else split legacy name
+            if (res.data.first_name || res.data.last_name) {
+                setFirstName(res.data.first_name || '');
+                setLastName(res.data.last_name || '');
+            } else if (res.data.name) {
+                const parts = res.data.name.split(' ', 2);
+                setFirstName(parts[0] || '');
+                setLastName(parts.slice(1).join(' ') || '');
+            }
             setPhone(res.data.phone || '');
         } catch (err) {
             console.error('Failed to fetch user:', err);
@@ -56,13 +65,14 @@ const UserSettings = () => {
 
         try {
             const res = await axios.put(`${API_URL}/user/profile`,
-                { name, phone },
+                { first_name: firstName, last_name: lastName, phone },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
             // Update localStorage with new user data
             const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-            localStorage.setItem('user', JSON.stringify({ ...currentUser, name }));
+            const fullName = `${firstName} ${lastName}`.trim();
+            localStorage.setItem('user', JSON.stringify({ ...currentUser, name: fullName }));
 
             setProfileSuccess(true);
             setTimeout(() => setProfileSuccess(false), 3000);
@@ -163,19 +173,35 @@ const UserSettings = () => {
                     </div>
 
                     {/* Name */}
-                    <div style={{ marginBottom: '16px' }}>
-                        <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-muted)', fontSize: '14px' }}>
-                            <User size={14} style={{ marginRight: '6px' }} />
-                            Display Name
-                        </label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="input-field"
-                            placeholder="Your name"
-                            required
-                        />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                                <User size={14} style={{ marginRight: '6px' }} />
+                                First Name
+                            </label>
+                            <input
+                                type="text"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                                className="input-field"
+                                placeholder="First name"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                                <User size={14} style={{ marginRight: '6px' }} />
+                                Last Name
+                            </label>
+                            <input
+                                type="text"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                className="input-field"
+                                placeholder="Last name"
+                                required
+                            />
+                        </div>
                     </div>
 
                     {/* Phone */}

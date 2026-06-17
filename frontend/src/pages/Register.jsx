@@ -7,7 +7,8 @@ import API_URL from '../config';
 
 const Register = () => {
     const [formData, setFormData] = useState({
-        name: '',
+        first_name: '',
+        last_name: '',
         email: '',
         phone: '',
         password: '',
@@ -45,18 +46,33 @@ const Register = () => {
 
                 <form onSubmit={handleSubmit}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
-                        <div style={{ position: 'relative' }}>
-                            <UserIcon size={18} style={{ position: 'absolute', left: '14px', top: '16px', color: 'var(--text-muted)' }} />
-                            <input
-                                name="name"
-                                type="text"
-                                placeholder="Full Name"
-                                className="input-field"
-                                style={{ paddingLeft: '44px', marginBottom: '0' }}
-                                value={formData.name}
-                                onChange={handleChange}
-                                required
-                            />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div style={{ position: 'relative' }}>
+                                <UserIcon size={18} style={{ position: 'absolute', left: '14px', top: '16px', color: 'var(--text-muted)' }} />
+                                <input
+                                    name="first_name"
+                                    type="text"
+                                    placeholder="First Name"
+                                    className="input-field"
+                                    style={{ paddingLeft: '44px', marginBottom: '0' }}
+                                    value={formData.first_name}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+                            <div style={{ position: 'relative' }}>
+                                <UserIcon size={18} style={{ position: 'absolute', left: '14px', top: '16px', color: 'var(--text-muted)' }} />
+                                <input
+                                    name="last_name"
+                                    type="text"
+                                    placeholder="Last Name"
+                                    className="input-field"
+                                    style={{ paddingLeft: '44px', marginBottom: '0' }}
+                                    value={formData.last_name}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
                         </div>
 
                         <div style={{ position: 'relative' }}>

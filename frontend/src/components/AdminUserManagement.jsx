@@ -15,7 +15,7 @@ const AdminUserManagement = () => {
     const [selectedPlayer, setSelectedPlayer] = useState(null);
     const [playerHistory, setPlayerHistory] = useState(null);
     const [editingUser, setEditingUser] = useState(null);
-    const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
+    const [editForm, setEditForm] = useState({ first_name: '', last_name: '', email: '', phone: '' });
     const [editSaving, setEditSaving] = useState(false);
     const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -278,8 +278,17 @@ const AdminUserManagement = () => {
 
     const startEdit = (user) => {
         setEditingUser(user);
+        // Use first_name/last_name if available, otherwise split the name
+        let firstName = user.first_name || '';
+        let lastName = user.last_name || '';
+        if (!firstName && !lastName && user.name) {
+            const parts = user.name.split(' ', 2);
+            firstName = parts[0] || '';
+            lastName = parts.slice(1).join(' ') || '';
+        }
         setEditForm({
-            name: user.name || '',
+            first_name: firstName,
+            last_name: lastName,
             email: user.email || '',
             phone: user.phone || ''
         });
@@ -287,8 +296,8 @@ const AdminUserManagement = () => {
 
     const saveEdit = async () => {
         if (!editingUser) return;
-        if (!editForm.name.trim()) {
-            showToast('Name is required', 'warning');
+        if (!editForm.first_name.trim()) {
+            showToast('First name is required', 'warning');
             return;
         }
         setEditSaving(true);
@@ -297,7 +306,7 @@ const AdminUserManagement = () => {
             await axios.put(`${API_URL}/admin/users/${editingUser._id}`, editForm, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            showToast(`${editForm.name} updated successfully`, 'success');
+            showToast(`${editForm.first_name} ${editForm.last_name} updated successfully`.trim(), 'success');
             setEditingUser(null);
             fetchUsers();
         } catch (err) {
@@ -752,15 +761,27 @@ const AdminUserManagement = () => {
                         </div>
 
                         <div style={{ display: 'grid', gap: '16px' }}>
-                            <div>
-                                <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', marginBottom: '6px', display: 'block' }}>Name</label>
-                                <input
-                                    type="text"
-                                    className="input-field"
-                                    value={editForm.name}
-                                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                    style={{ marginBottom: 0 }}
-                                />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div>
+                                    <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', marginBottom: '6px', display: 'block' }}>First Name</label>
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        value={editForm.first_name}
+                                        onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
+                                        style={{ marginBottom: 0 }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', marginBottom: '6px', display: 'block' }}>Last Name</label>
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        value={editForm.last_name}
+                                        onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
+                                        style={{ marginBottom: 0 }}
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', marginBottom: '6px', display: 'block' }}>Email</label>

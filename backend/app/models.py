@@ -21,7 +21,13 @@ class User(BaseModel):
     def __init__(self, data=None):
         super().__init__(data)
         data = data or {}
-        self.name = data.get('name')
+        self.first_name = data.get('first_name', '')
+        self.last_name = data.get('last_name', '')
+        # Compute name from first/last, fall back to legacy 'name' field for existing users
+        if self.first_name or self.last_name:
+            self.name = f"{self.first_name} {self.last_name}".strip()
+        else:
+            self.name = data.get('name', '')
         self.email = data.get('email')
         self.phone = data.get('phone')
         self.password_hash = data.get('password_hash')

@@ -24,10 +24,10 @@ const AdminProxyRegister = () => {
         setError('');
         try {
             const token = localStorage.getItem('token');
-            const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
             
             await axios.post(`${API_URL}/admin/proxy-register`, {
-                name: fullName,
+                first_name: formData.firstName.trim(),
+                last_name: formData.lastName.trim(),
                 email: formData.email,
                 phone: formData.phone
             }, {

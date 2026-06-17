@@ -19,8 +19,18 @@ def register():
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({"error": "Email and password required"}), 400
     
+    first_name = (data.get('first_name') or '').strip().title()
+    last_name = (data.get('last_name') or '').strip().title()
+    
+    if not first_name or not last_name:
+        return jsonify({"error": "First name and last name required"}), 400
+    
     if User.find_by_email(mongo, data['email']):
         return jsonify({"error": "User already exists"}), 400
+    
+    data['first_name'] = first_name
+    data['last_name'] = last_name
+    data['name'] = f"{first_name} {last_name}"
     
     user = User(data)
     user.set_password(data['password'])
@@ -172,7 +182,7 @@ def get_me():
 @bp.route('/user/profile', methods=['PUT'])
 @jwt_required()
 def update_profile():
-    """Update user profile (name, phone)"""
+    """Update user profile (first_name, last_name, phone)"""
     user_id = get_jwt_identity()
     user = User.find_by_id(mongo, user_id)
     if not user:
@@ -181,7 +191,11 @@ def update_profile():
     data = request.json
     
     # Update allowed fields
-    if 'name' in data and data['name']:
+    if 'first_name' in data or 'last_name' in data:
+        user.first_name = (data.get('first_name') or user.first_name or '').strip().title()
+        user.last_name = (data.get('last_name') or user.last_name or '').strip().title()
+        user.name = f"{user.first_name} {user.last_name}".strip()
+    elif 'name' in data and data['name']:
         user.name = data['name'].strip()
     if 'phone' in data:
         user.phone = data['phone'].strip() if data['phone'] else None
@@ -274,12 +288,27 @@ def proxy_register():
         return jsonify({"error": "Admin access required"}), 403
         
     data = request.json
-    if not data or not data.get('name'):
-        return jsonify({"error": "Player name required"}), 400
+    
+    # Accept first_name/last_name or legacy 'name' field
+    first_name = (data.get('first_name') or '').strip().title()
+    last_name = (data.get('last_name') or '').strip().title()
+    
+    if not first_name and not last_name and data.get('name'):
+        # Legacy: split a single name field
+        parts = data['name'].strip().split(' ', 1)
+        first_name = parts[0].title()
+        last_name = parts[1].title() if len(parts) > 1 else ''
+    
+    if not first_name:
+        return jsonify({"error": "Player first name required"}), 400
+    
+    full_name = f"{first_name} {last_name}".strip()
         
     # Proxy users don't need email/password
     user = User({
-        "name": data.get('name'),
+        "first_name": first_name,
+        "last_name": last_name,
+        "name": full_name,
         "email": data.get('email'), # Optional for proxy
         "phone": data.get('phone'), # Optional for proxy
         "is_proxy": True,
@@ -1071,9 +1100,21 @@ def update_user(user_id):
     data = request.json
     update_fields = {}
     
-    # Allowed editable fields
-    if 'name' in data and data['name']:
-        update_fields['name'] = data['name'].strip()
+    # Handle first_name / last_name fields (recompute name)
+    if 'first_name' in data or 'last_name' in data:
+        first = (data.get('first_name') or getattr(user, 'first_name', '') or '').strip().title()
+        last = (data.get('last_name') or getattr(user, 'last_name', '') or '').strip().title()
+        update_fields['first_name'] = first
+        update_fields['last_name'] = last
+        update_fields['name'] = f"{first} {last}".strip()
+    elif 'name' in data and data['name']:
+        # Legacy: accept a single name and try to split
+        full_name = data['name'].strip()
+        parts = full_name.split(' ', 1)
+        update_fields['first_name'] = parts[0].title()
+        update_fields['last_name'] = parts[1].title() if len(parts) > 1 else ''
+        update_fields['name'] = full_name
+    
     if 'email' in data and data['email']:
         new_email = data['email'].strip().lower()
         # Check for duplicate email (skip if unchanged)
