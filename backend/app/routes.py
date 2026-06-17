@@ -2,9 +2,11 @@ from flask import Blueprint, jsonify, request, Response
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from app.models import User, Tournament, Game
 from app import mongo, bcrypt
+from config import Config
 from bson import ObjectId
 from datetime import datetime, timedelta
 import json
+import pytz
 
 bp = Blueprint('main', __name__)
 
@@ -423,7 +425,16 @@ def get_active_tournament():
     tournament = Tournament.find_active(mongo)
     if not tournament:
         return jsonify(None), 200
-    return jsonify(tournament.to_dict()), 200
+    
+    data = tournament.to_dict()
+    
+    # Add is_tournament_day flag so frontend knows whether to show check-in
+    tz = pytz.timezone(Config.TOURNAMENT_TIMEZONE)
+    today = datetime.now(tz).strftime('%Y-%m-%d')
+    data['is_tournament_day'] = today in (tournament.dates or [])
+    data['today'] = today
+    
+    return jsonify(data), 200
 
 @bp.route('/tournaments/standings', methods=['GET'])
 def get_standings():

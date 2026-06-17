@@ -596,55 +596,76 @@ const PlayerDashboard = () => {
                     {/* DASHBOARD TAB CONTENT */}
                     {activeTab === 'dashboard' && (
                         <div style={{ display: 'grid', gap: '20px' }}>
-                            {/* Check-In Card */}
-                            <AnimatePresence>
-                                {!checkedIn && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        className="glass-card"
-                                        style={{ padding: '24px', border: '1px solid var(--brand-teal-glow)', background: 'rgba(99, 102, 241, 0.05)' }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                            <Clock style={{ color: 'var(--brand-teal)', marginTop: '4px' }} />
-                                            <div style={{ flex: 1 }}>
-                                                <h3 style={{ marginBottom: '4px' }}>Presence Confirmation</h3>
-                                                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '12px' }}>
-                                                    Confirm you are here to be included in today's pairings.
-                                                </p>
-                                                <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '16px', fontStyle: 'italic' }}>
-                                                    💵 Don't forget to find the Tournament Director to pay your entry fee!
-                                                </p>
-                                                {checkInError && (
-                                                    <div style={{
-                                                        background: 'rgba(251, 191, 36, 0.1)',
-                                                        border: '1px solid rgba(251, 191, 36, 0.3)',
-                                                        borderRadius: '8px',
-                                                        padding: '12px',
-                                                        marginBottom: '16px',
-                                                        color: '#fbbf24',
-                                                        fontSize: '13px',
-                                                        textAlign: 'center'
-                                                    }}>
-                                                        ⏰ {checkInError}
+                            {/* Check-In Card — only on tournament days */}
+                            {tournament?.is_tournament_day ? (
+                                <>
+                                    <AnimatePresence>
+                                        {!checkedIn && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="glass-card"
+                                                style={{ padding: '24px', border: '1px solid var(--brand-teal-glow)', background: 'rgba(99, 102, 241, 0.05)' }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                                    <Clock style={{ color: 'var(--brand-teal)', marginTop: '4px' }} />
+                                                    <div style={{ flex: 1 }}>
+                                                        <h3 style={{ marginBottom: '4px' }}>Presence Confirmation</h3>
+                                                        <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '12px' }}>
+                                                            Confirm you are here to be included in today's pairings.
+                                                        </p>
+                                                        <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '16px', fontStyle: 'italic' }}>
+                                                            💵 Don't forget to find the Tournament Director to pay your entry fee!
+                                                        </p>
+                                                        {checkInError && (
+                                                            <div style={{
+                                                                background: 'rgba(251, 191, 36, 0.1)',
+                                                                border: '1px solid rgba(251, 191, 36, 0.3)',
+                                                                borderRadius: '8px',
+                                                                padding: '12px',
+                                                                marginBottom: '16px',
+                                                                color: '#fbbf24',
+                                                                fontSize: '13px',
+                                                                textAlign: 'center'
+                                                            }}>
+                                                                ⏰ {checkInError}
+                                                            </div>
+                                                        )}
+                                                        <button onClick={handleCheckIn} className="btn-primary" style={{ width: '100%' }}>
+                                                            I'm Here!
+                                                        </button>
                                                     </div>
-                                                )}
-                                                <button onClick={handleCheckIn} className="btn-primary" style={{ width: '100%' }}>
-                                                    I'm Here!
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
 
-                            {checkedIn && (
-                                <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <CheckCircle2 size={24} style={{ color: '#10b981' }} />
-                                    <span style={{ fontWeight: '600' }}>Presence Confirmed</span>
+                                    {checkedIn && (
+                                        <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <CheckCircle2 size={24} style={{ color: '#10b981' }} />
+                                            <span style={{ fontWeight: '600' }}>Presence Confirmed</span>
+                                        </div>
+                                    )}
+                                </>
+                            ) : tournament ? (
+                                <div className="glass-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <Calendar size={22} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+                                    <div>
+                                        <div style={{ fontWeight: '600', marginBottom: '2px' }}>No tournament today</div>
+                                        <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                                            {(() => {
+                                                const nextDate = tournament.dates?.find(d => d > (tournament.today || ''));
+                                                if (nextDate) {
+                                                    const dt = new Date(nextDate + 'T12:00:00');
+                                                    return `Next game day: ${dt.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`;
+                                                }
+                                                return 'Check back for the next game day.';
+                                            })()}
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
+                            ) : null}
 
                             {/* Attendance Planner Card */}
                             {tournament.dates && tournament.dates.some((_, idx) => idx > tournament.current_day_index && !(tournament.cancelled_dates || []).includes(idx)) && (

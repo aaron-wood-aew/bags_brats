@@ -249,8 +249,9 @@ const AdminDashboard = () => {
                 const roundsWithGames = new Set(todayGames.map(g => g.round_number));
                 const allRoundsHaveGames = roundsWithGames.size === roundsPerDay;
 
-                // All rounds must have games AND all games must be finalized
-                const allFinalized = todayGames.length > 0 &&
+                // Daily reveal: only on tournament days AND all games finalized
+                const allFinalized = activeTournament.is_tournament_day &&
+                    todayGames.length > 0 &&
                     allRoundsHaveGames &&
                     todayGames.every(g => g.status === 'finalized');
                 setAllGamesComplete(allFinalized);
@@ -852,10 +853,11 @@ const AdminDashboard = () => {
                                     <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
                                         {activeTournament.dates.map((date, idx) => {
                                             const isSelected = idx === (selectedDayIndex ?? activeTournament.current_day_index);
-                                            const isCurrent = idx === activeTournament.current_day_index;
-                                            const isPast = idx < activeTournament.current_day_index;
                                             const isCancelled = (activeTournament.cancelled_dates || []).includes(idx);
-                                            const isFuture = idx > activeTournament.current_day_index && !isCancelled;
+                                            const serverToday = activeTournament.today || new Date().toISOString().split('T')[0];
+                                            const isToday = date === serverToday;
+                                            const isPast = date < serverToday && !isToday;
+                                            const isFuture = date > serverToday && !isCancelled;
 
                                             const displayDate = new Date(date + 'T12:00:00');
                                             const monthDay = `${displayDate.getMonth() + 1}/${displayDate.getDate()}`;
@@ -868,7 +870,11 @@ const AdminDashboard = () => {
                                                         style={{
                                                             padding: '10px 16px',
                                                             borderRadius: '8px',
-                                                            background: isCancelled ? 'rgba(239, 68, 68, 0.05)' : (isSelected ? 'var(--brand-teal)' : 'rgba(255,255,255,0.03)'),
+                                                            background: isCancelled ? 'rgba(239, 68, 68, 0.05)' :
+                                                                (isSelected && isToday) ? 'var(--brand-teal)' :
+                                                                (isSelected && isPast) ? 'rgba(107, 114, 128, 0.3)' :
+                                                                isSelected ? 'var(--brand-teal)' :
+                                                                'rgba(255,255,255,0.03)',
                                                             border: isCancelled ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid transparent',
                                                             color: isCancelled ? 'rgba(239, 68, 68, 0.4)' : (isSelected ? 'white' : 'var(--text-muted)'),
                                                             cursor: isCancelled ? 'default' : 'pointer',
@@ -878,14 +884,14 @@ const AdminDashboard = () => {
                                                             flexDirection: 'column',
                                                             alignItems: 'center',
                                                             minWidth: '60px',
-                                                            opacity: isCancelled ? 0.5 : (isPast ? 0.7 : 1),
+                                                            opacity: isCancelled ? 0.5 : (isPast && !isSelected ? 0.6 : 1),
                                                             position: 'relative',
                                                             textDecoration: isCancelled ? 'line-through' : 'none'
                                                         }}
                                                     >
                                                         <span style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', opacity: 0.7 }}>{dayName}</span>
                                                         <span style={{ fontSize: '14px', fontWeight: '800' }}>{monthDay}</span>
-                                                        {isCurrent && (
+                                                        {isToday && (
                                                             <span style={{
                                                                 position: 'absolute',
                                                                 top: '-6px',
@@ -898,7 +904,7 @@ const AdminDashboard = () => {
                                                             }} />
                                                         )}
                                                         {isPast && !isCancelled && (
-                                                            <Check size={12} style={{ color: '#10b981', marginTop: '2px' }} />
+                                                            <Check size={12} style={{ color: '#6b7280', marginTop: '2px' }} />
                                                         )}
                                                         {isCancelled && (
                                                             <X size={12} style={{ color: '#ef4444', marginTop: '2px' }} />
@@ -980,31 +986,44 @@ const AdminDashboard = () => {
                                         </div>
                                     </div>
 
-                                    {/* Round Manager - only show for current day */}
-                                    {(activeTournament.cancelled_dates || []).includes(selectedDayIndex ?? activeTournament.current_day_index) ? (
-                                        /* Cancelled day */
-                                        <div style={{ padding: '20px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
-                                            <XCircle size={32} style={{ color: '#ef4444', marginBottom: '8px', opacity: 0.6 }} />
-                                            <div style={{ fontWeight: '700', marginBottom: '4px', color: '#ef4444' }}>Day Cancelled</div>
-                                            <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>This tournament day has been cancelled</div>
-                                        </div>
-                                    ) : (selectedDayIndex ?? activeTournament.current_day_index) === activeTournament.current_day_index ? (
-                                        <RoundManager tournament={activeTournament} onUpdate={fetchActiveTournament} />
-                                    ) : (selectedDayIndex ?? 0) < activeTournament.current_day_index ? (
-                                        /* Past day - show completed games */
-                                        <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center' }}>
-                                            <Check size={32} style={{ color: '#10b981', marginBottom: '8px' }} />
-                                            <div style={{ fontWeight: '700', marginBottom: '4px' }}>Day Completed</div>
-                                            <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>View game results in the Games tab</div>
-                                        </div>
-                                    ) : (
-                                        /* Future day - not yet started */
-                                        <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center' }}>
-                                            <Calendar size={32} style={{ color: 'var(--text-muted)', marginBottom: '8px' }} />
-                                            <div style={{ fontWeight: '700', marginBottom: '4px' }}>Upcoming Day</div>
-                                            <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Pairings will be generated when this day begins</div>
-                                        </div>
-                                    )}
+                                    {/* Round Manager - date-aware display */}
+                                    {(() => {
+                                        const viewIdx = selectedDayIndex ?? activeTournament.current_day_index;
+                                        const viewDate = activeTournament.dates?.[viewIdx];
+                                        const serverToday = activeTournament.today || new Date().toISOString().split('T')[0];
+                                        const isCancelledDay = (activeTournament.cancelled_dates || []).includes(viewIdx);
+                                        const isViewingToday = viewDate === serverToday;
+                                        const isViewingPast = viewDate < serverToday;
+                                        
+                                        if (isCancelledDay) {
+                                            return (
+                                                <div style={{ padding: '20px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
+                                                    <XCircle size={32} style={{ color: '#ef4444', marginBottom: '8px', opacity: 0.6 }} />
+                                                    <div style={{ fontWeight: '700', marginBottom: '4px', color: '#ef4444' }}>Day Cancelled</div>
+                                                    <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>This tournament day has been cancelled</div>
+                                                </div>
+                                            );
+                                        }
+                                        if (isViewingToday) {
+                                            return <RoundManager tournament={activeTournament} onUpdate={fetchActiveTournament} />;
+                                        }
+                                        if (isViewingPast) {
+                                            return (
+                                                <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center' }}>
+                                                    <Check size={32} style={{ color: '#6b7280', marginBottom: '8px' }} />
+                                                    <div style={{ fontWeight: '700', marginBottom: '4px' }}>Day Completed</div>
+                                                    <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>View game results in the Games tab</div>
+                                                </div>
+                                            );
+                                        }
+                                        return (
+                                            <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center' }}>
+                                                <Calendar size={32} style={{ color: 'var(--text-muted)', marginBottom: '8px' }} />
+                                                <div style={{ fontWeight: '700', marginBottom: '4px' }}>Upcoming Day</div>
+                                                <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Pairings will be generated when this day begins</div>
+                                            </div>
+                                        );
+                                    })()}
 
                                     {/* Open Check-In Early Button */}
                                     <button
@@ -1092,7 +1111,9 @@ const AdminDashboard = () => {
                                     }}
                                 >
                                     <Star size={18} />
-                                    {allGamesComplete ? 'Launch Daily Big Reveal 🏆' : 'Complete daily rounds first...'}
+                                    {allGamesComplete ? 'Launch Daily Big Reveal 🏆' : 
+                                        !activeTournament?.is_tournament_day ? 'No games today' : 
+                                        'Complete daily rounds first...'}
                                 </button>
 
                                 {/* Launch Grand Champion Reveal Button */}
