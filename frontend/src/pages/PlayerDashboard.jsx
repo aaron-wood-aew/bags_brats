@@ -208,9 +208,19 @@ const PlayerDashboard = () => {
         }
         try {
             const token = localStorage.getItem('token');
+            const userId = user.id || user._id;
+            const isOnTeam1 = currentGame.team1_player_ids?.includes(userId);
+            
+            // score1 state = "Your Team" score (left input)
+            // score2 state = "Opponents" score (right input)
+            // API expects: score1 = Team 1's score, score2 = Team 2's score
+            // If player is on Team 2, their "Your Team" score is actually Team 2's score
+            const apiScore1 = isOnTeam1 ? parseInt(score1) : parseInt(score2);
+            const apiScore2 = isOnTeam1 ? parseInt(score2) : parseInt(score1);
+            
             await axios.post(`${API_URL}/games/${currentGame._id}/submit`, {
-                score1: parseInt(score1),
-                score2: parseInt(score2)
+                score1: apiScore1,
+                score2: apiScore2
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -235,6 +245,11 @@ const PlayerDashboard = () => {
         // Active game takes priority
         if (currentGame) {
             const isPowerGame = currentGame.is_power_game;
+
+            const isOnTeam1 = currentGame.team1_player_ids?.includes(user.id || user._id);
+            // For display: "Your Team" score = team's actual score, "Opponents" = other team's score
+            const myTeamScore = isOnTeam1 ? currentGame.score1 : currentGame.score2;
+            const oppTeamScore = isOnTeam1 ? currentGame.score2 : currentGame.score1;
 
             return (
                 <div style={{ textAlign: 'center' }}>
@@ -321,7 +336,7 @@ const PlayerDashboard = () => {
                                 className="input-field"
                                 style={{ width: '80px', textAlign: 'center', fontSize: '24px', fontWeight: '800', marginTop: '16px', marginBottom: '0', opacity: currentGame.status === 'finalized' ? 0.5 : 1 }}
                                 placeholder="0"
-                                value={currentGame.status === 'finalized' ? currentGame.score1 : score1}
+                                value={currentGame.status === 'finalized' ? myTeamScore : score1}
                                 onChange={(e) => setScore1(e.target.value)}
                                 disabled={currentGame.status === 'finalized'}
                             />
@@ -374,7 +389,7 @@ const PlayerDashboard = () => {
                                 className="input-field"
                                 style={{ width: '80px', textAlign: 'center', fontSize: '24px', fontWeight: '800', marginTop: '16px', marginBottom: '0', opacity: currentGame.status === 'finalized' ? 0.5 : 1 }}
                                 placeholder="0"
-                                value={currentGame.status === 'finalized' ? currentGame.score2 : score2}
+                                value={currentGame.status === 'finalized' ? oppTeamScore : score2}
                                 onChange={(e) => setScore2(e.target.value)}
                                 disabled={currentGame.status === 'finalized'}
                             />
