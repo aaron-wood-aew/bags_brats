@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { User, Users, Clock, CheckCircle2, Trophy, Play, Save, Shield, LogOut, Settings, Hourglass, Zap, Calendar, LayoutDashboard, Activity } from 'lucide-react';
+import { User, Users, Clock, CheckCircle2, Trophy, Play, Save, Shield, LogOut, Settings, Hourglass, Zap, Calendar, LayoutDashboard, Activity, Plus, Minus } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,8 +15,15 @@ const PlayerDashboard = () => {
     const [currentGame, setCurrentGame] = useState(null);
     const [checkedIn, setCheckedIn] = useState(user.checked_in);
     const [timer, setTimer] = useState(0);
-    const [score1, setScore1] = useState('');
-    const [score2, setScore2] = useState('');
+    const [score1, setScore1] = useState(() => {
+        const saved = sessionStorage.getItem('bb_score1');
+        return saved !== null ? parseInt(saved) : 0;
+    });
+    const [score2, setScore2] = useState(() => {
+        const saved = sessionStorage.getItem('bb_score2');
+        return saved !== null ? parseInt(saved) : 0;
+    });
+    const [scorePulse, setScorePulse] = useState(null); // 'score1' or 'score2'
     const [scoreError, setScoreError] = useState('');
     const [myStats, setMyStats] = useState({ wins: 0, points: 0 });
     const [daySummary, setDaySummary] = useState({ state: 'waiting', games: [], rounds_total: 0, rounds_completed: 0 });
@@ -24,6 +31,32 @@ const PlayerDashboard = () => {
     const [schedule, setSchedule] = useState(user.attendance_schedule || {});
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('dashboard');
+
+    // Persist scores to sessionStorage on change
+    useEffect(() => {
+        if (currentGame && currentGame.status !== 'finalized') {
+            sessionStorage.setItem('bb_score1', score1.toString());
+            sessionStorage.setItem('bb_score2', score2.toString());
+        }
+    }, [score1, score2, currentGame]);
+
+    // Reset scores when a NEW game starts (different game ID)
+    const lastGameIdRef = useRef(null);
+    useEffect(() => {
+        if (currentGame && currentGame._id !== lastGameIdRef.current) {
+            lastGameIdRef.current = currentGame._id;
+            // Check if we have saved scores for THIS game
+            const savedGameId = sessionStorage.getItem('bb_game_id');
+            if (savedGameId !== currentGame._id) {
+                // New game — reset scores
+                setScore1(0);
+                setScore2(0);
+                sessionStorage.setItem('bb_game_id', currentGame._id);
+                sessionStorage.setItem('bb_score1', '0');
+                sessionStorage.setItem('bb_score2', '0');
+            }
+        }
+    }, [currentGame]);
 
 
     const formatDateShort = (dateStr) => {
@@ -202,8 +235,8 @@ const PlayerDashboard = () => {
     };
 
     const handleSubmitScore = async () => {
-        if (!score1 || !score2) {
-            setScoreError("Please enter both scores.");
+        if (score1 === 0 && score2 === 0) {
+            setScoreError("Both scores can't be zero. Track the score first!");
             return;
         }
         try {
@@ -211,12 +244,12 @@ const PlayerDashboard = () => {
             const userId = user.id || user._id;
             const isOnTeam1 = currentGame.team1_player_ids?.includes(userId);
             
-            // score1 state = "Your Team" score (left input)
-            // score2 state = "Opponents" score (right input)
+            // score1 state = "Your Team" score (left panel)
+            // score2 state = "Opponents" score (right panel)
             // API expects: score1 = Team 1's score, score2 = Team 2's score
             // If player is on Team 2, their "Your Team" score is actually Team 2's score
-            const apiScore1 = isOnTeam1 ? parseInt(score1) : parseInt(score2);
-            const apiScore2 = isOnTeam1 ? parseInt(score2) : parseInt(score1);
+            const apiScore1 = isOnTeam1 ? score1 : score2;
+            const apiScore2 = isOnTeam1 ? score2 : score1;
             
             await axios.post(`${API_URL}/games/${currentGame._id}/submit`, {
                 score1: apiScore1,
@@ -224,9 +257,14 @@ const PlayerDashboard = () => {
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            // Clear sessionStorage
+            sessionStorage.removeItem('bb_score1');
+            sessionStorage.removeItem('bb_score2');
+            sessionStorage.removeItem('bb_game_id');
+            
             setCurrentGame(null);
-            setScore1('');
-            setScore2('');
+            setScore1(0);
+            setScore2(0);
             setScoreError('');
             setActiveTab('dashboard');
             // Refresh day summary
@@ -240,6 +278,21 @@ const PlayerDashboard = () => {
         }
     };
 
+    const handleScoreIncrement = (which, delta) => {
+        const setter = which === 'score1' ? setScore1 : setScore2;
+        setter(prev => {
+            const next = Math.max(0, Math.min(50, prev + delta));
+            if (next !== prev) {
+                // Trigger pulse animation
+                setScorePulse(which);
+                setTimeout(() => setScorePulse(null), 300);
+                // Haptic feedback
+                if (navigator.vibrate) navigator.vibrate(10);
+            }
+            return next;
+        });
+    };
+
     // Render session content based on state
     const renderSessionContent = () => {
         // Active game takes priority
@@ -251,8 +304,139 @@ const PlayerDashboard = () => {
             const myTeamScore = isOnTeam1 ? currentGame.score1 : currentGame.score2;
             const oppTeamScore = isOnTeam1 ? currentGame.score2 : currentGame.score1;
 
+            // Helper to render player names for a team
+            const renderTeamNames = (names, isMyTeam) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minHeight: '40px', justifyContent: 'center' }}>
+                    {names?.map(name => {
+                        const hasPowerIcon = name.includes('⚡');
+                        const cleanName = name.replace(' ⚡', '');
+                        const isMe = isMyTeam && cleanName === user.name;
+                        return (
+                            <span key={name} style={{
+                                fontSize: '14px',
+                                fontWeight: isMe ? '800' : '600',
+                                color: hasPowerIcon ? '#fbbf24' : (isMe ? 'white' : 'rgba(255,255,255,0.8)'),
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '4px'
+                            }}>
+                                {hasPowerIcon && <Zap size={12} style={{ color: '#fbbf24' }} />}
+                                {cleanName}
+                                {hasPowerIcon && <Zap size={12} style={{ color: '#fbbf24' }} />}
+                            </span>
+                        );
+                    })}
+                </div>
+            );
+
+            const myTeamNames = isOnTeam1 ? currentGame.team1_player_names : currentGame.team2_player_names;
+            const oppTeamNames = isOnTeam1 ? currentGame.team2_player_names : currentGame.team1_player_names;
+
+            const isFinalized = currentGame.status === 'finalized';
+
+            // Score panel component
+            const ScorePanel = ({ label, teamNames, isMyTeam, score, scoreKey, color, colorGlow, colorBorder }) => (
+                <div style={{
+                    flex: 1,
+                    background: `linear-gradient(180deg, ${colorGlow}, rgba(0,0,0,0))`,
+                    border: `1px solid ${colorBorder}`,
+                    borderRadius: '16px',
+                    padding: '16px 12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '12px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}>
+                    {/* Team label */}
+                    <div style={{
+                        fontSize: '11px',
+                        fontWeight: '800',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        color: color,
+                        opacity: 0.9
+                    }}>
+                        {label}
+                    </div>
+
+                    {/* Player names */}
+                    {renderTeamNames(teamNames, isMyTeam)}
+
+                    {/* + Button */}
+                    <button
+                        onClick={() => !isFinalized && handleScoreIncrement(scoreKey, 1)}
+                        disabled={isFinalized}
+                        style={{
+                            width: '100%',
+                            height: '56px',
+                            borderRadius: '12px',
+                            border: `2px solid ${colorBorder}`,
+                            background: isFinalized ? 'rgba(255,255,255,0.02)' : `linear-gradient(135deg, ${colorGlow}, rgba(0,0,0,0))`,
+                            color: isFinalized ? 'var(--text-muted)' : color,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: isFinalized ? 'not-allowed' : 'pointer',
+                            opacity: isFinalized ? 0.3 : 1,
+                            transition: 'all 0.15s ease',
+                            fontSize: '28px',
+                            fontWeight: '800'
+                        }}
+                    >
+                        <Plus size={28} strokeWidth={3} />
+                    </button>
+
+                    {/* Score display */}
+                    <motion.div
+                        key={`${scoreKey}-${score}`}
+                        initial={{ scale: 1 }}
+                        animate={{ scale: scorePulse === scoreKey ? [1, 1.25, 1] : 1 }}
+                        transition={{ duration: 0.25 }}
+                        style={{
+                            fontSize: '52px',
+                            fontWeight: '900',
+                            color: 'white',
+                            lineHeight: 1,
+                            textShadow: `0 0 30px ${colorGlow}`,
+                            minWidth: '60px',
+                            textAlign: 'center',
+                            padding: '4px 0'
+                        }}
+                    >
+                        {isFinalized ? (scoreKey === 'score1' ? myTeamScore : oppTeamScore) : score}
+                    </motion.div>
+
+                    {/* - Button */}
+                    <button
+                        onClick={() => !isFinalized && handleScoreIncrement(scoreKey, -1)}
+                        disabled={isFinalized || score === 0}
+                        style={{
+                            width: '100%',
+                            height: '56px',
+                            borderRadius: '12px',
+                            border: `2px solid ${isFinalized || score === 0 ? 'rgba(255,255,255,0.05)' : colorBorder}`,
+                            background: 'rgba(255,255,255,0.02)',
+                            color: isFinalized || score === 0 ? 'rgba(255,255,255,0.15)' : color,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: (isFinalized || score === 0) ? 'not-allowed' : 'pointer',
+                            opacity: (isFinalized || score === 0) ? 0.3 : 0.7,
+                            transition: 'all 0.15s ease',
+                            fontSize: '28px',
+                            fontWeight: '800'
+                        }}
+                    >
+                        <Minus size={28} strokeWidth={3} />
+                    </button>
+                </div>
+            );
+
             return (
-                <div style={{ textAlign: 'center' }}>
+                <div>
                     {/* Power Game Banner */}
                     {isPowerGame && (
                         <div style={{
@@ -260,7 +444,7 @@ const PlayerDashboard = () => {
                             border: '1px solid rgba(251, 191, 36, 0.3)',
                             borderRadius: '12px',
                             padding: '12px',
-                            marginBottom: '20px',
+                            marginBottom: '16px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -273,147 +457,80 @@ const PlayerDashboard = () => {
                     )}
 
                     {/* Station Indicator */}
-                    <div style={{ 
-                        marginBottom: '24px', 
-                        display: 'inline-block',
-                        background: 'rgba(139, 92, 246, 0.08)',
-                        border: '1px solid rgba(139, 92, 246, 0.2)',
-                        padding: '6px 16px',
-                        borderRadius: '20px',
-                        fontSize: '13px',
-                        fontWeight: '800',
-                        color: '#a78bfa',
-                        boxShadow: '0 0 15px rgba(139, 92, 246, 0.15)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
-                    }}>
-                        Station {currentGame.court || currentGame.game_number || "—"}
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                        <div style={{ flex: 1 }}>
-                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Your Team</p>
-                            <div style={{ fontWeight: '800', fontSize: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                {currentGame.team1_player_ids?.includes(user.id || user._id) ?
-                                    currentGame.team1_player_names?.map(name => {
-                                        const hasPowerIcon = name.includes('⚡');
-                                        const cleanName = name.replace(' ⚡', '');
-                                        return (
-                                            <span key={name} style={{
-                                                color: cleanName === user.name ? 'var(--brand-teal)' : (hasPowerIcon ? '#fbbf24' : 'white'),
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px'
-                                            }}>
-                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
-                                                {cleanName}
-                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
-                                            </span>
-                                        );
-                                    }) :
-                                    currentGame.team2_player_names?.map(name => {
-                                        const hasPowerIcon = name.includes('⚡');
-                                        const cleanName = name.replace(' ⚡', '');
-                                        return (
-                                            <span key={name} style={{
-                                                color: cleanName === user.name ? 'var(--brand-teal)' : (hasPowerIcon ? '#fbbf24' : 'white'),
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px'
-                                            }}>
-                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
-                                                {cleanName}
-                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
-                                            </span>
-                                        );
-                                    })
-                                }
-                            </div>
-                            <input
-                                type="number"
-                                className="input-field"
-                                style={{ width: '80px', textAlign: 'center', fontSize: '24px', fontWeight: '800', marginTop: '16px', marginBottom: '0', opacity: currentGame.status === 'finalized' ? 0.5 : 1 }}
-                                placeholder="0"
-                                value={currentGame.status === 'finalized' ? myTeamScore : score1}
-                                onChange={(e) => setScore1(e.target.value)}
-                                disabled={currentGame.status === 'finalized'}
-                            />
-                        </div>
-
-                        <div style={{ fontSize: '20px', fontWeight: '800', opacity: 0.2, margin: '0 20px', marginTop: '40px' }}>VS</div>
-
-                        <div style={{ flex: 1 }}>
-                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Opponents</p>
-                            <div style={{ fontWeight: '800', fontSize: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                {!currentGame.team1_player_ids?.includes(user.id || user._id) ?
-                                    currentGame.team1_player_names?.map(name => {
-                                        const hasPowerIcon = name.includes('⚡');
-                                        const cleanName = name.replace(' ⚡', '');
-                                        return (
-                                            <span key={name} style={{
-                                                color: hasPowerIcon ? '#fbbf24' : 'white',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px'
-                                            }}>
-                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
-                                                {cleanName}
-                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
-                                            </span>
-                                        );
-                                    }) :
-                                    currentGame.team2_player_names?.map(name => {
-                                        const hasPowerIcon = name.includes('⚡');
-                                        const cleanName = name.replace(' ⚡', '');
-                                        return (
-                                            <span key={name} style={{
-                                                color: hasPowerIcon ? '#fbbf24' : 'white',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px'
-                                            }}>
-                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
-                                                {cleanName}
-                                                {hasPowerIcon && <Zap size={16} style={{ color: '#fbbf24' }} />}
-                                            </span>
-                                        );
-                                    })
-                                }
-                            </div>
-                            <input
-                                type="number"
-                                className="input-field"
-                                style={{ width: '80px', textAlign: 'center', fontSize: '24px', fontWeight: '800', marginTop: '16px', marginBottom: '0', opacity: currentGame.status === 'finalized' ? 0.5 : 1 }}
-                                placeholder="0"
-                                value={currentGame.status === 'finalized' ? oppTeamScore : score2}
-                                onChange={(e) => setScore2(e.target.value)}
-                                disabled={currentGame.status === 'finalized'}
-                            />
+                    <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                        <div style={{ 
+                            display: 'inline-block',
+                            background: 'rgba(139, 92, 246, 0.08)',
+                            border: '1px solid rgba(139, 92, 246, 0.2)',
+                            padding: '6px 16px',
+                            borderRadius: '20px',
+                            fontSize: '13px',
+                            fontWeight: '800',
+                            color: '#a78bfa',
+                            boxShadow: '0 0 15px rgba(139, 92, 246, 0.15)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            Station {currentGame.court || currentGame.game_number || "—"}
                         </div>
                     </div>
 
-                    {scoreError && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{scoreError}</p>}
+                    {/* Score Tracker Panels */}
+                    <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+                        <ScorePanel
+                            label="Your Team"
+                            teamNames={myTeamNames}
+                            isMyTeam={true}
+                            score={score1}
+                            scoreKey="score1"
+                            color="#f97316"
+                            colorGlow="rgba(249, 115, 22, 0.12)"
+                            colorBorder="rgba(249, 115, 22, 0.3)"
+                        />
+                        <ScorePanel
+                            label="Opponents"
+                            teamNames={oppTeamNames}
+                            isMyTeam={false}
+                            score={score2}
+                            scoreKey="score2"
+                            color="#10b981"
+                            colorGlow="rgba(16, 185, 129, 0.12)"
+                            colorBorder="rgba(16, 185, 129, 0.3)"
+                        />
+                    </div>
 
-                    {currentGame.status === 'finalized' ? (
-                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid #10b98133', color: '#10b981', fontWeight: '700' }}>
+                    {scoreError && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px', textAlign: 'center' }}>{scoreError}</p>}
+
+                    {isFinalized ? (
+                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid #10b98133', color: '#10b981', fontWeight: '700', textAlign: 'center' }}>
                             Match Result Finalized
                         </div>
                     ) : (
                         <button
                             className="btn-primary"
-                            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '12px',
+                                padding: '16px',
+                                fontSize: '16px',
+                                fontWeight: '800',
+                                background: (score1 > 0 || score2 > 0) 
+                                    ? 'linear-gradient(135deg, var(--brand-teal), #48abb3)' 
+                                    : 'rgba(255,255,255,0.05)',
+                                opacity: (score1 > 0 || score2 > 0) ? 1 : 0.5,
+                                border: (score1 > 0 || score2 > 0) ? 'none' : '1px solid var(--border)'
+                            }}
                             onClick={handleSubmitScore}
                         >
                             <Save size={20} />
-                            Submit Final Results
+                            Submit Final Score
                         </button>
                     )}
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '16px' }}>
-                        {currentGame.status === 'finalized' ? "Results have been recorded by the Director or a teammate." : "Only one player per game needs to submit. Results are final."}
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center' }}>
+                        {isFinalized ? "Results have been recorded by the Director or a teammate." : "Tap + or − to track. Only one player needs to submit."}
                     </p>
                 </div>
             );
