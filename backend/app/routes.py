@@ -1334,6 +1334,18 @@ def update_game(game_id):
     if 'score1' in data: update_fields['score1'] = int(data['score1'])
     if 'score2' in data: update_fields['score2'] = int(data['score2'])
     
+    # Player roster swaps
+    for team_key in ['team1_player_ids', 'team2_player_ids']:
+        if team_key in data:
+            player_ids = data[team_key]
+            if not isinstance(player_ids, list):
+                return jsonify({"error": f"{team_key} must be a list of player IDs"}), 400
+            # Validate all player IDs exist
+            for pid in player_ids:
+                if not User.find_by_id(mongo, pid):
+                    return jsonify({"error": f"Player ID '{pid}' not found"}), 400
+            update_fields[team_key] = player_ids
+    
     # If admin enters scores, consider it finalized unless specified otherwise
     if ('score1' in data or 'score2' in data) and 'status' not in data:
         update_fields['status'] = 'finalized'

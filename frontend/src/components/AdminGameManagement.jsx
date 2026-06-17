@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_URL from '../config';
 import SocketService from '../services/socket';
-import { Trophy, Activity, Edit2, Lock, Unlock, Clock, Save, Play, ChevronDown, ChevronUp, Calendar, Check } from 'lucide-react';
+import { Trophy, Activity, Edit2, Lock, Unlock, Clock, Save, Play, ChevronDown, ChevronUp, Calendar, Check, Users, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../context/ToastContext';
 
@@ -13,6 +13,11 @@ const AdminGameManagement = () => {
     const [expandedSections, setExpandedSections] = useState({});
     const [loading, setLoading] = useState(true);
     const [now, setNow] = useState(new Date());
+    const [swapGame, setSwapGame] = useState(null);
+    const [swapTeam1, setSwapTeam1] = useState([]);
+    const [swapTeam2, setSwapTeam2] = useState([]);
+    const [allUsers, setAllUsers] = useState([]);
+    const [swapSaving, setSwapSaving] = useState(false);
 
     useEffect(() => {
         const interval = setInterval(() => setNow(new Date()), 1000);
@@ -52,6 +57,7 @@ const AdminGameManagement = () => {
 
     useEffect(() => {
         fetchGames();
+        fetchAllUsers();
 
         SocketService.on('standings_updated', fetchGames);
         SocketService.on('pairings_revealed', fetchGames);
@@ -64,6 +70,45 @@ const AdminGameManagement = () => {
 
     const [editingGame, setEditingGame] = useState(null);
     const [editData, setEditData] = useState({ score1: 0, score2: 0, status: '' });
+
+    const fetchAllUsers = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/admin/users`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setAllUsers(res.data);
+        } catch (err) {
+            console.error('Failed to fetch users for swap', err);
+        }
+    };
+
+    const startSwap = (game) => {
+        setSwapGame(game);
+        setSwapTeam1([...(game.team1_player_ids || [])]);
+        setSwapTeam2([...(game.team2_player_ids || [])]);
+    };
+
+    const handleSwapSave = async () => {
+        if (!swapGame) return;
+        setSwapSaving(true);
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/admin/games/${swapGame._id}`, {
+                team1_player_ids: swapTeam1,
+                team2_player_ids: swapTeam2
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            showToast('Players swapped successfully! 🔄', 'success');
+            setSwapGame(null);
+            fetchGames();
+        } catch (err) {
+            showToast(err.response?.data?.error || 'Failed to swap players', 'error');
+        } finally {
+            setSwapSaving(false);
+        }
+    };
 
     const handleStartEdit = (game) => {
         setEditingGame(game._id);
@@ -443,6 +488,13 @@ const AdminGameManagement = () => {
                                                                             >
                                                                                 <Edit2 size={14} style={{ marginRight: '6px' }} /> Override
                                                                             </button>
+                                                                            <button
+                                                                                className="btn-primary"
+                                                                                style={{ flex: 1, padding: '8px', fontSize: '12px', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}
+                                                                                onClick={() => startSwap(game)}
+                                                                            >
+                                                                                <Users size={14} style={{ marginRight: '6px' }} /> Swap
+                                                                            </button>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -463,6 +515,143 @@ const AdminGameManagement = () => {
             {games.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                     No games found for this tournament.
+                </div>
+            )}
+
+            {/* Player Swap Modal */}
+            {swapGame && (
+                <div
+                    onClick={(e) => { if (e.target === e.currentTarget) setSwapGame(null); }}
+                    style={{
+                        position: 'fixed',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0,0,0,0.7)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '20px'
+                    }}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        style={{
+                            background: 'var(--bg-card)',
+                            borderRadius: '16px',
+                            border: '1px solid var(--border)',
+                            padding: '32px',
+                            maxWidth: '560px',
+                            width: '100%',
+                            position: 'relative'
+                        }}
+                    >
+                        <button
+                            onClick={() => setSwapGame(null)}
+                            style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            <Users size={20} style={{ color: '#a855f7' }} />
+                            <h3 style={{ fontSize: '20px' }}>Swap Players</h3>
+                        </div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>
+                            Station {swapGame.court || swapGame.game_number} • Round {swapGame.round_number} • Day {(swapGame.day_index || 0) + 1}
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                            {/* Team 1 */}
+                            <div>
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '10px', letterSpacing: '0.05em' }}>Team 1</div>
+                                {swapTeam1.map((pid, idx) => (
+                                    <div key={idx} style={{ marginBottom: '10px' }}>
+                                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Player {idx + 1}</label>
+                                        <select
+                                            value={pid}
+                                            onChange={(e) => {
+                                                const updated = [...swapTeam1];
+                                                updated[idx] = e.target.value;
+                                                setSwapTeam1(updated);
+                                            }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                background: 'rgba(255,255,255,0.05)',
+                                                color: 'var(--text)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: '8px',
+                                                fontSize: '13px',
+                                                cursor: 'pointer',
+                                                outline: 'none'
+                                            }}
+                                        >
+                                            {allUsers.map(u => (
+                                                <option key={u._id} value={u._id} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+                                                    {u.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Team 2 */}
+                            <div>
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '10px', letterSpacing: '0.05em' }}>Team 2</div>
+                                {swapTeam2.map((pid, idx) => (
+                                    <div key={idx} style={{ marginBottom: '10px' }}>
+                                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Player {idx + 1}</label>
+                                        <select
+                                            value={pid}
+                                            onChange={(e) => {
+                                                const updated = [...swapTeam2];
+                                                updated[idx] = e.target.value;
+                                                setSwapTeam2(updated);
+                                            }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                background: 'rgba(255,255,255,0.05)',
+                                                color: 'var(--text)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: '8px',
+                                                fontSize: '13px',
+                                                cursor: 'pointer',
+                                                outline: 'none'
+                                            }}
+                                        >
+                                            {allUsers.map(u => (
+                                                <option key={u._id} value={u._id} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+                                                    {u.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                            <button
+                                onClick={() => setSwapGame(null)}
+                                className="btn-secondary"
+                                style={{ flex: 1, padding: '12px' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSwapSave}
+                                disabled={swapSaving}
+                                className="btn-primary"
+                                style={{ flex: 1, padding: '12px', background: 'linear-gradient(135deg, #a855f7, #8b5cf6)', opacity: swapSaving ? 0.7 : 1 }}
+                            >
+                                {swapSaving ? 'Saving...' : 'Save Roster Changes'}
+                            </button>
+                        </div>
+                    </motion.div>
                 </div>
             )}
         </div>
