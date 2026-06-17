@@ -340,7 +340,8 @@ const AdminDashboard = () => {
             fetchActiveTournament();
             showToast("All tournaments and matches cleared successfully.", "success");
         } catch (err) {
-            showToast("Failed to clear tournament", "error");
+            console.error("Clear tournament error:", err.response?.data || err.message || err);
+            showToast(err.response?.data?.error || err.message || "Failed to clear tournament", "error");
         }
     };
 
