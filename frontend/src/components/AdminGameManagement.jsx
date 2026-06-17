@@ -278,7 +278,8 @@ const AdminGameManagement = () => {
                                     roundStatus = 'finalized';
                                 }
 
-                                return (
+                                    const isSuddenDeathRound = roundGames.some(g => g.is_sudden_death);
+                                    return (
                                     <div key={roundNum} style={{ display: 'flex', flexDirection: 'column' }}>
                                         {/* Collapsible Round Header */}
                                         <div
@@ -288,17 +289,22 @@ const AdminGameManagement = () => {
                                                 justifyContent: 'space-between',
                                                 alignItems: 'center',
                                                 padding: '16px 20px',
-                                                background: 'rgba(255, 255, 255, 0.02)',
-                                                border: '1px solid var(--border)',
+                                                background: isSuddenDeathRound ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+                                                border: isSuddenDeathRound ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border)',
                                                 borderRadius: '12px',
                                                 cursor: 'pointer',
                                                 marginBottom: isExpanded ? '16px' : '0px',
+                                                boxShadow: isSuddenDeathRound ? '0 0 15px rgba(239, 68, 68, 0.08)' : 'none'
                                             }}
                                             className="round-header"
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <span style={{ fontSize: '15px', fontWeight: '700' }}>
-                                                    Round {roundNum}
+                                                <span style={{ 
+                                                    fontSize: '15px', 
+                                                    fontWeight: '800',
+                                                    color: isSuddenDeathRound ? '#ef4444' : 'inherit'
+                                                }}>
+                                                    {isSuddenDeathRound ? 'Championship Sudden Death Round ⚔️' : `Round ${roundNum}`}
                                                 </span>
                                                 <span style={{
                                                     fontSize: '10px',
@@ -342,10 +348,12 @@ const AdminGameManagement = () => {
                                                                 layout
                                                                 style={{
                                                                     padding: '20px',
-                                                                    background: 'rgba(255,255,255,0.03)',
+                                                                    background: game.is_sudden_death ? 'linear-gradient(180deg, rgba(239, 68, 68, 0.08), rgba(0,0,0,0))' : 'rgba(255,255,255,0.03)',
                                                                     borderRadius: '12px',
-                                                                    border: editingGame === game._id ? '1px solid var(--brand-teal)' : '1px solid var(--border)',
-                                                                    boxShadow: editingGame === game._id ? '0 0 20px var(--brand-teal-glow)' : 'none'
+                                                                    border: editingGame === game._id ? '1px solid var(--brand-teal)' : 
+                                                                            game.is_sudden_death ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border)',
+                                                                    boxShadow: editingGame === game._id ? '0 0 20px var(--brand-teal-glow)' : 
+                                                                               game.is_sudden_death ? '0 0 20px rgba(239, 68, 68, 0.15)' : 'none'
                                                                 }}
                                                             >
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>

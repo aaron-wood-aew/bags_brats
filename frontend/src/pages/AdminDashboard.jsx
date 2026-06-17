@@ -30,6 +30,8 @@ const AdminDashboard = () => {
     const [dbRestoreLoading, setDbRestoreLoading] = useState(false);
     const restoreFileRef = useRef(null);
     const [addDayDate, setAddDayDate] = useState('');
+    const [tieForFirst, setTieForFirst] = useState(false);
+    const [suddenDeathGame, setSuddenDeathGame] = useState(null);
 
     // Sync backupDayIndex with tournament's current day upon load
     useEffect(() => {
@@ -256,8 +258,22 @@ const AdminDashboard = () => {
                     todayGames.every(g => g.status === 'finalized');
                 setAllGamesComplete(allFinalized);
 
-                // Check if ALL tournament days have complete games (for Grand Champion Reveal)
+                // Fetch standings and check for 1st-place tie on the final day
+                const standingsRes = await axios.get(`${API_URL}/tournaments/standings`);
+                const standings = standingsRes.data;
                 const totalDays = activeTournament.dates?.length || 1;
+                const isLastDay = activeTournament.current_day_index === totalDays - 1;
+
+                const hasTie = standings.length >= 2 &&
+                    standings[0].wins === standings[1].wins &&
+                    standings[0].total_points === standings[1].total_points;
+                
+                setTieForFirst(isLastDay && hasTie);
+
+                const sdGame = todayGames.find(g => g.is_sudden_death === true) || null;
+                setSuddenDeathGame(sdGame);
+
+                // Check if ALL tournament days have complete games (for Grand Champion Reveal)
                 const cancelledDays = activeTournament.cancelled_dates || [];
                 let allDaysComplete = totalDays > 0;
                 for (let dayIdx = 0; dayIdx < totalDays; dayIdx++) {
@@ -342,6 +358,27 @@ const AdminDashboard = () => {
         } catch (err) {
             console.error("Clear tournament error:", err.response?.data || err.message || err);
             showToast(err.response?.data?.error || err.message || "Failed to clear tournament", "error");
+        }
+    };
+
+    const handleGenerateSuddenDeath = async () => {
+        if (!(await confirm({
+            title: 'Generate Sudden Death Match? ⚔️',
+            message: 'All daily rounds are complete and there is a tie for 1st place. This will generate a 1v1 Sudden Death Championship Match between the top two players to break the tie.',
+            confirmText: 'Generate Match',
+            type: 'purple'
+        }))) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(`${API_URL}/admin/generate-sudden-death`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            showToast(res.data.msg || "Sudden Death Championship Match generated successfully! ⚔️", "success");
+            fetchActiveTournament();
+        } catch (err) {
+            console.error("Failed to generate Sudden Death match", err);
+            showToast(err.response?.data?.error || "Failed to generate Sudden Death match", "error");
         }
     };
 
@@ -1092,6 +1129,50 @@ const AdminDashboard = () => {
                             </p>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                {/* Sudden Death Match Generator */}
+                                {allGamesComplete && tieForFirst && !suddenDeathGame && (
+                                    <button
+                                        onClick={handleGenerateSuddenDeath}
+                                        className="btn-primary"
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '8px',
+                                            background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+                                            border: 'none',
+                                            color: 'white',
+                                            fontWeight: '800',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)',
+                                            padding: '14px'
+                                        }}
+                                    >
+                                        <Activity size={18} />
+                                        Generate Sudden Death Match ⚔️
+                                    </button>
+                                )}
+
+                                {suddenDeathGame && (
+                                    <div style={{
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        color: '#ef4444',
+                                        fontSize: '13px',
+                                        fontWeight: '700',
+                                        textAlign: 'center',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px'
+                                    }}>
+                                        ⚔️ Sudden Death Match: {suddenDeathGame.status.toUpperCase()}
+                                    </div>
+                                )}
+
                                 {/* Launch Big Reveal Button */}
                                 <button
                                     onClick={() => navigate('/admin/reveal')}

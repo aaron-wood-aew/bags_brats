@@ -131,6 +131,7 @@ class Game(BaseModel):
         self.end_time = data.get('end_time')
         self.submitted_by = data.get('submitted_by')
         self.is_power_game = data.get('is_power_game', False)  # True if 1v2 game
+        self.is_sudden_death = data.get('is_sudden_death', False)  # True if sudden death 1v1 match
         self.day_index = data.get('day_index', 0)  # Which tournament day (0-indexed)
         self.round_number = data.get('round_number', 1)  # Which round (1-indexed)
 

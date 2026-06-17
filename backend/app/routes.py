@@ -674,6 +674,117 @@ def generate_pairings_route():
     }), 201
 
 
+@bp.route('/admin/generate-sudden-death', methods=['POST'])
+@jwt_required()
+def generate_sudden_death_route():
+    """Generate a 1v1 Sudden Death Championship Match for tied 1st-place players."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+        
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"error": "No active tournament"}), 400
+
+    # Sudden death only allowed on the last day of the tournament
+    total_days = len(tournament.dates or [])
+    if tournament.current_day_index != total_days - 1:
+        return jsonify({"error": "Sudden Death Championship Match can only be generated on the final tournament day."}), 400
+
+    # Check if a sudden death game already exists for today
+    existing_sd = mongo.db.games.find_one({
+        "tournament_id": str(tournament._id),
+        "day_index": tournament.current_day_index,
+        "is_sudden_death": True
+    })
+    if existing_sd:
+        return jsonify({"error": "Sudden Death match has already been created for today."}), 400
+
+    # Calculate standings
+    games = list(mongo.db.games.find({
+        "tournament_id": str(tournament._id),
+        "status": "finalized"
+    }))
+    
+    standings = {}
+    for game in games:
+        # Determine winning team
+        win_ids = []
+        if game['score1'] > game['score2']:
+            win_ids = game['team1_player_ids']
+        elif game['score2'] > game['score1']:
+            win_ids = game['team2_player_ids']
+            
+        all_players = [str(pid) for pid in game['team1_player_ids'] + game['team2_player_ids']]
+        win_ids = [str(pid) for pid in win_ids]
+        
+        for pid in all_players:
+            if pid not in standings:
+                user = User.find_by_id(mongo, pid)
+                standings[pid] = {"name": user.name if user else "Unknown", "wins": 0, "games_played": 0, "total_points": 0}
+            
+            standings[pid]["games_played"] += 1
+            if pid in [str(pid) for pid in game['team1_player_ids']]:
+                standings[pid]["total_points"] += game['score1']
+            else:
+                standings[pid]["total_points"] += game['score2']
+
+            if pid in win_ids:
+                standings[pid]["wins"] += 1
+                
+    sorted_standings = sorted(
+        [{"user_id": str(k), **v} for k, v in standings.items()],
+        key=lambda x: (x['total_points'], x['wins'], -x['games_played']),
+        reverse=True
+    )
+
+    if len(sorted_standings) < 2:
+        return jsonify({"error": "Need at least 2 players in standings to generate sudden death."}), 400
+
+    # Check if top two are tied on wins and points
+    p1 = sorted_standings[0]
+    p2 = sorted_standings[1]
+    if p1['wins'] != p2['wins'] or p1['total_points'] != p2['total_points']:
+        return jsonify({"error": "Top two players are not tied. No Sudden Death needed."}), 400
+
+    # Generate the Sudden Death match
+    sd_round = tournament.current_round + 1
+    
+    game = Game({
+        "tournament_id": str(tournament._id),
+        "date": datetime.utcnow().isoformat(),
+        "game_number": 1,
+        "court": 1,
+        "team1_player_ids": [p1['user_id']],
+        "team2_player_ids": [p2['user_id']],
+        "status": "upcoming",
+        "is_power_game": False,
+        "is_sudden_death": True,
+        "day_index": tournament.current_day_index,
+        "round_number": sd_round
+    })
+    game.save(mongo)
+
+    # Increment current_round so the tournament advances
+    tournament.current_round = sd_round
+    tournament.save(mongo)
+
+    # Prepare socket broadcast data
+    game_dict = game.to_dict()
+    game_dict['team1_player_names'] = [p1['name']]
+    game_dict['team2_player_names'] = [p2['name']]
+
+    # Broadcast updated pairings / standings via socket
+    from app.events import broadcast_pairings
+    broadcast_pairings(str(tournament._id), [game_dict])
+
+    return jsonify({
+        "msg": "Sudden Death Championship Match generated successfully! ⚔️",
+        "game": game_dict
+    }), 201
+
+
 @bp.route('/admin/round/start', methods=['POST'])
 @jwt_required()
 def start_round():

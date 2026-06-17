@@ -298,6 +298,7 @@ const PlayerDashboard = () => {
         // Active game takes priority
         if (currentGame) {
             const isPowerGame = currentGame.is_power_game;
+            const isSuddenDeath = currentGame.is_sudden_death;
 
             const isOnTeam1 = currentGame.team1_player_ids?.includes(user.id || user._id);
             // For display: "Your Team" score = team's actual score, "Opponents" = other team's score
@@ -437,8 +438,28 @@ const PlayerDashboard = () => {
 
             return (
                 <div>
+                    {/* Sudden Death Championship Banner */}
+                    {isSuddenDeath && (
+                        <div style={{
+                            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(185, 28, 28, 0.1))',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            marginBottom: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: '0 0 15px rgba(239, 68, 68, 0.15)'
+                        }}>
+                            <Trophy size={20} style={{ color: '#ef4444' }} />
+                            <span style={{ color: '#ef4444', fontWeight: '900', fontSize: '14px', letterSpacing: '0.05em' }}>SUDDEN DEATH CHAMPIONSHIP ROUND ⚔️</span>
+                            <Trophy size={20} style={{ color: '#ef4444' }} />
+                        </div>
+                    )}
+
                     {/* Power Game Banner */}
-                    {isPowerGame && (
+                    {isPowerGame && !isSuddenDeath && (
                         <div style={{
                             background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.1))',
                             border: '1px solid rgba(251, 191, 36, 0.3)',
@@ -460,14 +481,14 @@ const PlayerDashboard = () => {
                     <div style={{ textAlign: 'center', marginBottom: '16px' }}>
                         <div style={{ 
                             display: 'inline-block',
-                            background: 'rgba(139, 92, 246, 0.08)',
-                            border: '1px solid rgba(139, 92, 246, 0.2)',
+                            background: isSuddenDeath ? 'rgba(239, 68, 68, 0.08)' : 'rgba(139, 92, 246, 0.08)',
+                            border: isSuddenDeath ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(139, 92, 246, 0.2)',
                             padding: '6px 16px',
                             borderRadius: '20px',
                             fontSize: '13px',
                             fontWeight: '800',
-                            color: '#a78bfa',
-                            boxShadow: '0 0 15px rgba(139, 92, 246, 0.15)',
+                            color: isSuddenDeath ? '#ef4444' : '#a78bfa',
+                            boxShadow: isSuddenDeath ? '0 0 15px rgba(239, 68, 68, 0.15)' : '0 0 15px rgba(139, 92, 246, 0.15)',
                             textTransform: 'uppercase',
                             letterSpacing: '0.05em'
                         }}>
@@ -483,9 +504,9 @@ const PlayerDashboard = () => {
                             isMyTeam={true}
                             score={score1}
                             scoreKey="score1"
-                            color="#f97316"
-                            colorGlow="rgba(249, 115, 22, 0.12)"
-                            colorBorder="rgba(249, 115, 22, 0.3)"
+                            color={isSuddenDeath ? "#ef4444" : "#10b981"}
+                            colorGlow={isSuddenDeath ? "rgba(239, 68, 68, 0.12)" : "rgba(16, 185, 129, 0.12)"}
+                            colorBorder={isSuddenDeath ? "rgba(239, 68, 68, 0.3)" : "rgba(16, 185, 129, 0.3)"}
                         />
                         <ScorePanel
                             label="Opponents"
@@ -493,16 +514,24 @@ const PlayerDashboard = () => {
                             isMyTeam={false}
                             score={score2}
                             scoreKey="score2"
-                            color="#10b981"
-                            colorGlow="rgba(16, 185, 129, 0.12)"
-                            colorBorder="rgba(16, 185, 129, 0.3)"
+                            color={isSuddenDeath ? "#ef4444" : "#f97316"}
+                            colorGlow={isSuddenDeath ? "rgba(239, 68, 68, 0.12)" : "rgba(249, 115, 22, 0.12)"}
+                            colorBorder={isSuddenDeath ? "rgba(239, 68, 68, 0.3)" : "rgba(249, 115, 22, 0.3)"}
                         />
                     </div>
 
                     {scoreError && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px', textAlign: 'center' }}>{scoreError}</p>}
 
                     {isFinalized ? (
-                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid #10b98133', color: '#10b981', fontWeight: '700', textAlign: 'center' }}>
+                        <div style={{ 
+                            background: isSuddenDeath ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', 
+                            padding: '16px', 
+                            borderRadius: '12px', 
+                            border: isSuddenDeath ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid #10b98133', 
+                            color: isSuddenDeath ? '#ef4444' : '#10b981', 
+                            fontWeight: '700', 
+                            textAlign: 'center' 
+                        }}>
                             Match Result Finalized
                         </div>
                     ) : (
@@ -518,10 +547,11 @@ const PlayerDashboard = () => {
                                 fontSize: '16px',
                                 fontWeight: '800',
                                 background: (score1 > 0 || score2 > 0) 
-                                    ? 'linear-gradient(135deg, var(--brand-teal), #48abb3)' 
+                                    ? (isSuddenDeath ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : 'linear-gradient(135deg, var(--brand-teal), #48abb3)') 
                                     : 'rgba(255,255,255,0.05)',
                                 opacity: (score1 > 0 || score2 > 0) ? 1 : 0.5,
-                                border: (score1 > 0 || score2 > 0) ? 'none' : '1px solid var(--border)'
+                                border: (score1 > 0 || score2 > 0) ? 'none' : '1px solid var(--border)',
+                                color: (score1 > 0 || score2 > 0) ? 'white' : 'var(--text-muted)'
                             }}
                             onClick={handleSubmitScore}
                         >

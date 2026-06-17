@@ -250,6 +250,54 @@ def generate_round_pairings(mongo, tournament_id, day_index, round_number):
             used_teams.add(normal_team.team_number)
             game_number += 1
             break
+            
+    # Then, pair remaining power teams together (Power vs Power, 1v1)
+    remaining_power = [t for t in power_teams if t.team_number not in used_teams]
+    for i, team1 in enumerate(remaining_power):
+        if team1.team_number in used_teams:
+            continue
+            
+        for team2 in remaining_power[i+1:]:
+            if team2.team_number in used_teams:
+                continue
+            
+            t1_key = tuple(sorted(team1.player_ids))
+            t2_key = tuple(sorted(team2.player_ids))
+            matchup_key = (t1_key, t2_key) if t1_key < t2_key else (t2_key, t1_key)
+            
+            if matchup_key in previous_matchups:
+                continue
+            
+            # Create Solo vs Solo Game (1v1)
+            game = Game({
+                "tournament_id": str(tournament_id),
+                "date": datetime.utcnow().isoformat(),
+                "game_number": game_number,
+                "day_index": day_index,
+                "round_number": round_number,
+                "team1_player_ids": team1.player_ids,
+                "team2_player_ids": team2.player_ids,
+                "status": "upcoming",
+                "is_power_game": False,
+                "court": game_number
+            })
+            game.save(mongo)
+            
+            game_dict = game.to_dict()
+            game_dict['team1_player_names'] = [
+                mongo.db.users.find_one({"_id": ObjectId(pid)})['name'] + " ⚡"
+                for pid in team1.player_ids
+            ]
+            game_dict['team2_player_names'] = [
+                mongo.db.users.find_one({"_id": ObjectId(pid)})['name'] + " ⚡"
+                for pid in team2.player_ids
+            ]
+            pairings.append(game_dict)
+            
+            used_teams.add(team1.team_number)
+            used_teams.add(team2.team_number)
+            game_number += 1
+            break
     
     # Then, pair remaining normal teams together (Normal Games)
     remaining_normal = [t for t in normal_teams if t.team_number not in used_teams]
@@ -300,9 +348,18 @@ def generate_round_pairings(mongo, tournament_id, day_index, round_number):
             game_number += 1
             break
     
-    # If no pairings were generated but teams exist, all matchups have been exhausted
-    # Allow rematches for small brackets
-    if len(pairings) == 0 and len(teams) >= 2:
+    # If we couldn't generate the full expected number of games, matchups are exhausted.
+    # Allow rematches for this round to ensure everyone gets to play.
+    expected_games = len(teams) // 2
+    if len(pairings) < expected_games and len(teams) >= 2:
+        # Delete any partially saved games from the database for this round first
+        mongo.db.games.delete_many({
+            "tournament_id": str(tournament_id),
+            "day_index": day_index,
+            "round_number": round_number
+        })
+        pairings = []
+        
         # Reset and regenerate without matchup exclusion
         used_teams = set()
         game_number = 1
