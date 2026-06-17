@@ -434,10 +434,10 @@ def get_standings():
             if pid in win_ids:
                 standings[pid]["wins"] += 1
                 
-    # Convert to list and sort
+    # Convert to list and sort by points (highest first), then wins, then fewest games
     sorted_standings = sorted(
         [{"user_id": str(k), **v} for k, v in standings.items()],
-        key=lambda x: (x['wins'], -x['games_played']),
+        key=lambda x: (x['total_points'], x['wins'], -x['games_played']),
         reverse=True
     )
     
