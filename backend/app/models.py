@@ -98,7 +98,29 @@ class Tournament(BaseModel):
     @classmethod
     def find_active(cls, mongo):
         data = mongo.db.tournaments.find_one({"status": {"$in": ["upcoming", "active", "blackout"]}})
-        return cls(data) if data else None
+        if not data:
+            return None
+        
+        tournament = cls(data)
+        
+        # Check if we should automatically advance the day index
+        try:
+            import pytz
+            from config import Config
+            tz = pytz.timezone(Config.TOURNAMENT_TIMEZONE)
+            today = datetime.now(tz).strftime('%Y-%m-%d')
+            
+            if tournament.dates and today in tournament.dates:
+                today_idx = tournament.dates.index(today)
+                if today_idx > tournament.current_day_index:
+                    tournament.current_day_index = today_idx
+                    tournament.current_round = 0
+                    tournament.check_in_open = False
+                    tournament.save(mongo)
+        except Exception as e:
+            print(f"[Tournament.find_active] Error auto-advancing day: {e}")
+            
+        return tournament
 
     def save(self, mongo):
         data = self.to_dict()
