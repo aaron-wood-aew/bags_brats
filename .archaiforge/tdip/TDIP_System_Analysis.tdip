@@ -2,7 +2,7 @@
   "version": "7.0_UNIFIED",
   "tdip_id": "system-analysis-1780183081087",
   "depth_layer": 0,
-  "timestamp": "2026-06-23T11:12:10.742Z",
+  "timestamp": "2026-06-23T14:41:24.439Z",
   "state": {
     "identity": {
       "name": "Archaiforge",
@@ -227,33 +227,33 @@
       "mode": "BUILD",
       "last_outcomes": [],
       "current_task": "Active Task",
-      "last_active": "2026-06-23T11:12:10.748Z",
+      "last_active": "2026-06-23T14:41:24.445Z",
       "last_dwell": {
-        "timestamp": "2026-05-30T23:18:01.092Z",
-        "turn": 0,
+        "timestamp": "2026-06-23T14:41:24.446Z",
+        "turn": 114,
         "reason": "DRIFT_GATE",
         "gate": "CRITICAL",
-        "proof_after": "abf5b880"
+        "proof_after": "2d11f18b"
       }
     },
     "metrics": {
-      "drift": 0.2929,
+      "drift": 0.5528,
       "drift_threshold_warning": 0.3,
       "drift_threshold_critical": 0.5,
       "isd_confidence": null,
       "dwell_state": {
         "depth": 0,
-        "stability": 0.707,
+        "stability": 0.447,
         "last_checkpoint_turn": 0
       },
-      "dwell_loops": 1,
+      "dwell_loops": 2,
       "human_mins": 0,
       "generic_mins": 0,
       "archaiforge_mins": 0,
       "roi": 1,
-      "turn_count": 110,
+      "turn_count": 114,
       "boot_time_ms": 70,
-      "interactions": 9,
+      "interactions": 10,
       "metrics_source": "tdip"
     },
     "lineage": {
@@ -319,6 +319,68 @@
             "hash_full": "abf5b880e385bdd61411a739ad17cd03307437e2e18103767062ffee247d2cbe",
             "hash_short": "abf5b880"
           }
+        },
+        {
+          "id": "dwell-1782225684446-1829249f603f6",
+          "timestamp": "2026-06-23T14:41:24.446Z",
+          "turn": 114,
+          "reason": "DRIFT_GATE",
+          "gate": "CRITICAL",
+          "drift_before": 0.5528,
+          "drift_after": 0.5528,
+          "confidence_before": null,
+          "confidence_after": null,
+          "dwell_state": {
+            "depth": 0,
+            "stability": 0.447,
+            "last_checkpoint_turn": 0
+          },
+          "corrections_applied": [],
+          "proof_before": {
+            "kind": "STATE_PROOF",
+            "algo": "sha256",
+            "canonicalization": "stableStringify-v1",
+            "hash_full": "5433a443b2bba7440a44c84dff5efa210e04f15b362f7524efb60032e24c7632",
+            "hash_short": "5433a443"
+          },
+          "proof_after": {
+            "kind": "STATE_PROOF",
+            "algo": "sha256",
+            "canonicalization": "stableStringify-v1",
+            "hash_full": "2d11f18b3a1b341fc9915bfbe7024394cec7d7c0707f7d12211214cf219f0421",
+            "hash_short": "2d11f18b"
+          }
+        },
+        {
+          "id": "dwell-1782225684446-1829249f603f6",
+          "timestamp": "2026-06-23T14:41:24.446Z",
+          "turn": 114,
+          "reason": "DRIFT_GATE",
+          "gate": "CRITICAL",
+          "drift_before": 0.5528,
+          "drift_after": 0.5528,
+          "confidence_before": null,
+          "confidence_after": null,
+          "dwell_state": {
+            "depth": 0,
+            "stability": 0.447,
+            "last_checkpoint_turn": 0
+          },
+          "corrections_applied": [],
+          "proof_before": {
+            "kind": "STATE_PROOF",
+            "algo": "sha256",
+            "canonicalization": "stableStringify-v1",
+            "hash_full": "5433a443b2bba7440a44c84dff5efa210e04f15b362f7524efb60032e24c7632",
+            "hash_short": "5433a443"
+          },
+          "proof_after": {
+            "kind": "STATE_PROOF",
+            "algo": "sha256",
+            "canonicalization": "stableStringify-v1",
+            "hash_full": "2d11f18b3a1b341fc9915bfbe7024394cec7d7c0707f7d12211214cf219f0421",
+            "hash_short": "2d11f18b"
+          }
         }
       ],
       "clear_events": [],
@@ -326,8 +388,8 @@
         "kind": "STATE_PROOF",
         "algo": "sha256",
         "canonicalization": "stableStringify-v1",
-        "hash_full": "e70036dd071df51bb01a3e527d963eddcfd877d82f03477395cccb4743ce3372",
-        "hash_short": "e70036dd"
+        "hash_full": "2d11f18b3a1b341fc9915bfbe7024394cec7d7c0707f7d12211214cf219f0421",
+        "hash_short": "2d11f18b"
       },
       "embodied_journey": [],
       "inflection_waypoints": [],
@@ -570,16 +632,16 @@
   },
   "wormhole": {
     "can_resume": true,
-    "age": 9,
+    "age": 10,
     "topology_hash": "unknown"
   },
   "proof": {
     "kind": "STATE_PROOF",
     "algo": "sha256",
     "canonicalization": "stableStringify-v1",
-    "hash_full": "e70036dd071df51bb01a3e527d963eddcfd877d82f03477395cccb4743ce3372",
-    "hash_short": "e70036dd"
+    "hash_full": "2d11f18b3a1b341fc9915bfbe7024394cec7d7c0707f7d12211214cf219f0421",
+    "hash_short": "2d11f18b"
   },
-  "proof_hash": "e70036dd",
-  "proof_full_hash": "e70036dd071df51bb01a3e527d963eddcfd877d82f03477395cccb4743ce3372"
+  "proof_hash": "2d11f18b",
+  "proof_full_hash": "2d11f18b3a1b341fc9915bfbe7024394cec7d7c0707f7d12211214cf219f0421"
 }
