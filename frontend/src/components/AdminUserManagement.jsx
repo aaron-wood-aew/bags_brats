@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key, ArrowUpDown, DollarSign, Link2Off, X, Pencil } from 'lucide-react';
+import { Users, Shield, Trash2, UserCog, CheckCircle2, Circle, Key, ArrowUpDown, DollarSign, Link2Off, X, Pencil, Download, Printer } from 'lucide-react';
 import { motion } from 'framer-motion';
 import API_URL from '../config';
 import { useToast } from '../context/ToastContext';
@@ -18,6 +18,56 @@ const AdminUserManagement = () => {
     const [editForm, setEditForm] = useState({ first_name: '', last_name: '', email: '', phone: '' });
     const [editSaving, setEditSaving] = useState(false);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const [printUsers, setPrintUsers] = useState(false);
+
+    useEffect(() => {
+        const handleAfterPrint = () => {
+            setPrintUsers(false);
+        };
+        window.addEventListener('afterprint', handleAfterPrint);
+        return () => window.removeEventListener('afterprint', handleAfterPrint);
+    }, []);
+
+    const handlePrintPDF = () => {
+        setPrintUsers(true);
+        setTimeout(() => {
+            window.print();
+        }, 300);
+    };
+
+    const handleDownloadCSV = () => {
+        try {
+            const csvRows = [];
+            csvRows.push(`"Bags & Brats Global Roster"`);
+            csvRows.push(`"Exported: ${new Date().toLocaleString()}"`);
+            csvRows.push("");
+            csvRows.push("Name,Email,Phone,Role,Status,Power Player,Paid");
+            
+            sortedUsers.forEach((user) => {
+                const name = user.name || "";
+                const email = user.email || "";
+                const phone = user.phone || "";
+                const role = user.role || "player";
+                const status = user.checked_in ? "Present" : "Absent";
+                const power = user.is_power_player ? "Yes" : "No";
+                const paid = user.has_paid ? "Yes" : "No";
+                csvRows.push(`"${name.replace(/"/g, '""')}","${email.replace(/"/g, '""')}","${phone.replace(/"/g, '""')}","${role}","${status}","${power}","${paid}"`);
+            });
+            
+            const blob = new Blob([csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `bags_brats_global_roster_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Global roster CSV exported successfully!", "success");
+        } catch (err) {
+            console.error("Failed to download CSV", err);
+            showToast("Failed to export roster CSV.", "error");
+        }
+    };
 
     const fetchActiveTournament = async () => {
         try {
@@ -361,7 +411,13 @@ const AdminUserManagement = () => {
                     <Users style={{ color: 'var(--brand-teal)' }} />
                     <h3 style={{ fontSize: '24px' }}>Global Roster</h3>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', marginLeft: 'auto' }}>
+                <div style={{ display: 'flex', gap: '12px', marginLeft: 'auto', alignItems: 'center' }}>
+                    <button onClick={handleDownloadCSV} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Download size={14} /> Download CSV
+                    </button>
+                    <button onClick={handlePrintPDF} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, var(--brand-teal), #48abb3)', color: '#0a141a', border: 'none' }}>
+                        <Printer size={14} /> Print Roster
+                    </button>
                     <button onClick={handleBulkDelete} className="btn-primary" style={{ padding: '8px 16px', fontSize: '13px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#ef4444' }}>
                         Reset Roster
                     </button>
@@ -823,6 +879,48 @@ const AdminUserManagement = () => {
                             </button>
                         </div>
                     </motion.div>
+                </div>
+            )}
+            
+            {printUsers && (
+                <div className="printable-backup-sheet" style={{ display: 'none' }}>
+                    <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '20px' }}>
+                        <h1 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: '#000000' }}>
+                            Bags & Brats Global Roster
+                        </h1>
+                        <div style={{ fontSize: '11px', color: '#555555', marginTop: '5px' }}>
+                            Exported: {new Date().toLocaleString()} • Total Players: {sortedUsers.length}
+                        </div>
+                    </div>
+                    
+                    <table className="backup-print-table">
+                        <thead>
+                            <tr>
+                                <th style={{ width: '5%', textAlign: 'center' }}>#</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th className="text-center" style={{ width: '10%' }}>Role</th>
+                                <th className="text-center" style={{ width: '12%' }}>Checked In</th>
+                                <th className="text-center" style={{ width: '12%' }}>Power Player</th>
+                                <th className="text-center" style={{ width: '10%' }}>Paid</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sortedUsers.map((user, idx) => (
+                                <tr key={user._id}>
+                                    <td className="text-center">{idx + 1}</td>
+                                    <td style={{ fontWeight: '600' }}>{user.name}</td>
+                                    <td>{user.email || '-'}</td>
+                                    <td>{user.phone || '-'}</td>
+                                    <td className="text-center">{user.role}</td>
+                                    <td className="text-center">{user.checked_in ? 'Present' : 'Absent'}</td>
+                                    <td className="text-center">{user.is_power_player ? 'Yes' : 'No'}</td>
+                                    <td className="text-center">{user.has_paid ? 'Yes' : 'No'}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
         </div>

@@ -226,6 +226,12 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchActiveTournament();
+        
+        const handleAfterPrint = () => {
+            setBackupData(null);
+        };
+        window.addEventListener('afterprint', handleAfterPrint);
+        return () => window.removeEventListener('afterprint', handleAfterPrint);
     }, []);
 
     // Sync selectedDayIndex with tournament's current day
