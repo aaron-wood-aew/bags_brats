@@ -889,6 +889,84 @@ def stop_round():
     }), 200
 
 
+@bp.route('/admin/round/reset', methods=['POST'])
+@jwt_required()
+def reset_round():
+    """Reset round pairings before the round starts."""
+    current_user_id = get_jwt_identity()
+    current_user = User.find_by_id(mongo, current_user_id)
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+        
+    tournament = Tournament.find_active(mongo)
+    if not tournament:
+        return jsonify({"error": "No active tournament"}), 400
+        
+    data = request.json or {}
+    day_index = data.get('day_index', tournament.current_day_index)
+    round_number = data.get('round_number', tournament.current_round)
+    
+    if round_number == 0:
+        return jsonify({"error": "No round has been generated yet."}), 400
+        
+    # Check if any games in this round are active or finalized
+    games = list(mongo.db.games.find({
+        "tournament_id": str(tournament._id),
+        "day_index": day_index,
+        "round_number": round_number
+    }))
+    
+    if any(g['status'] in ['active', 'finalized'] for g in games):
+        return jsonify({"error": f"Cannot reset Round {round_number}: some games are already active or finalized."}), 400
+        
+    # If Round 1, reset power player usage and delete teams
+    if round_number == 1:
+        # Find all power teams for today
+        power_teams = list(mongo.db.teams.find({
+            "tournament_id": str(tournament._id),
+            "day_index": day_index,
+            "is_power_team": True
+        }))
+        power_player_ids = []
+        for team in power_teams:
+            power_player_ids.extend(team.get("player_ids", []))
+            
+        if power_player_ids:
+            power_player_obj_ids = [ObjectId(pid) for pid in power_player_ids]
+            mongo.db.users.update_many(
+                {"_id": {"$in": power_player_obj_ids}},
+                {"$set": {"power_player_used": False}}
+            )
+            
+        # Delete all teams for today
+        mongo.db.teams.delete_many({
+            "tournament_id": str(tournament._id),
+            "day_index": day_index
+        })
+        
+    # Delete all games for today's round
+    mongo.db.games.delete_many({
+        "tournament_id": str(tournament._id),
+        "day_index": day_index,
+        "round_number": round_number
+    })
+    
+    # Decrement tournament current_round
+    tournament.current_round = round_number - 1
+    tournament.save(mongo)
+    
+    try:
+        from app.events import broadcast_standings_update
+        broadcast_standings_update(str(tournament._id))
+    except Exception as e:
+        print(f"Reset round broadcast failed: {e}")
+        
+    return jsonify({
+        "msg": f"Round {round_number} pairings reset successfully",
+        "current_round": tournament.current_round
+    }), 200
+
+
 @bp.route('/admin/round/status', methods=['GET'])
 @jwt_required()
 def get_round_status():

@@ -105,6 +105,33 @@ const RoundManager = ({ tournament, onUpdate }) => {
         setActionLoading(null);
     };
 
+    const handleResetRound = async (roundNumber) => {
+        if (!(await confirm({
+            title: `Reset Round ${roundNumber} Pairings?`,
+            message: roundNumber === 1
+                ? 'WARNING: Resetting Round 1 will completely delete all teams and games generated for today, and revert power player usage states. This is a true undo action.'
+                : `This will delete all generated matchups for Round ${roundNumber}.`,
+            confirmText: 'Reset Pairings',
+            type: 'danger'
+        }))) return;
+        setActionLoading(`reset-${roundNumber}`);
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/admin/round/reset`, {
+                round_number: roundNumber,
+                day_index: roundStatus?.day_index || 0
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchRoundStatus();
+            if (onUpdate) onUpdate();
+            showToast(`Round ${roundNumber} pairings reset successfully!`, "success");
+        } catch (err) {
+            showToast(err.response?.data?.error || "Failed to reset round", "error");
+        }
+        setActionLoading(null);
+    };
+
     if (loading) {
         return (
             <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -223,26 +250,47 @@ const RoundManager = ({ tournament, onUpdate }) => {
                                 )}
 
                                 {round.status === 'ready' && (
-                                    <button
-                                        onClick={() => handleStartRound(round.round_number)}
-                                        disabled={isLoading}
-                                        style={{
-                                            background: '#10b981',
-                                            color: 'white',
-                                            border: 'none',
-                                            padding: '8px 12px',
-                                            borderRadius: '8px',
-                                            fontSize: '12px',
-                                            fontWeight: '700',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px'
-                                        }}
-                                    >
-                                        <Play size={14} />
-                                        {isLoading ? 'Starting...' : 'Start'}
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            onClick={() => handleResetRound(round.round_number)}
+                                            disabled={isLoading}
+                                            style={{
+                                                background: 'rgba(239, 68, 68, 0.1)',
+                                                border: '1px solid #ef4444',
+                                                color: '#ef4444',
+                                                padding: '8px 12px',
+                                                borderRadius: '8px',
+                                                fontSize: '12px',
+                                                fontWeight: '700',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            }}
+                                        >
+                                            {isLoading ? 'Resetting...' : 'Reset'}
+                                        </button>
+                                        <button
+                                            onClick={() => handleStartRound(round.round_number)}
+                                            disabled={isLoading}
+                                            style={{
+                                                background: '#10b981',
+                                                color: 'white',
+                                                border: 'none',
+                                                padding: '8px 12px',
+                                                borderRadius: '8px',
+                                                fontSize: '12px',
+                                                fontWeight: '700',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            }}
+                                        >
+                                            <Play size={14} />
+                                            {isLoading ? 'Starting...' : 'Start'}
+                                        </button>
+                                    </div>
                                 )}
 
                                 {round.status === 'active' && (
