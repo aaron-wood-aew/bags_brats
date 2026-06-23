@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Trophy, Clock, Tv } from 'lucide-react';
+import { Trophy, Clock, Tv, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SocketService from '../services/socket';
 import API_URL from '../config';
@@ -134,6 +134,134 @@ const DisplayView = () => {
     const [roundTimerStatus, setRoundTimerStatus] = useState('pending');
     const [timerEndTime, setTimerEndTime] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+
+    const audioFlagsRef = useRef({
+        played2M: false,
+        played1M: false,
+        playedBuzzer: false,
+        lastTickTime: null
+    });
+
+    const playDoubleBeep = () => {
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+            const ctx = new AudioContextClass();
+            
+            // Beep 1
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(880, ctx.currentTime);
+            gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.15);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start();
+            osc1.stop(ctx.currentTime + 0.15);
+            
+            // Beep 2
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.2);
+            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.2);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.2);
+            osc2.stop(ctx.currentTime + 0.35);
+        } catch (e) {
+            console.error("Failed playing warning beep:", e);
+        }
+    };
+
+    const playTick = () => {
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+            const ctx = new AudioContextClass();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, ctx.currentTime);
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start();
+            osc.stop(ctx.currentTime + 0.08);
+        } catch (e) {
+            console.error("Failed playing countdown tick:", e);
+        }
+    };
+
+    const playBuzzer = () => {
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+            const ctx = new AudioContextClass();
+            const osc1 = ctx.createOscillator();
+            const osc2 = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(100, ctx.currentTime);
+            
+            osc2.type = 'square';
+            osc2.frequency.setValueAtTime(102, ctx.currentTime); // slightly detuned for chorus effect
+            
+            gain.gain.setValueAtTime(0.8, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 1.2);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.8);
+            
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc1.start();
+            osc2.start();
+            osc1.stop(ctx.currentTime + 1.8);
+            osc2.stop(ctx.currentTime + 1.8);
+        } catch (e) {
+            console.error("Failed playing final buzzer:", e);
+        }
+    };
+
+    const enableAudio = () => {
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) {
+                const ctx = new AudioContextClass();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.frequency.value = 1000;
+                gain.gain.value = 0.0001;
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.05);
+            }
+            setIsAudioEnabled(true);
+        } catch (e) {
+            console.error("Failed to enable audio context", e);
+        }
+    };
+
+    const toggleAudio = () => {
+        if (!isAudioEnabled) {
+            enableAudio();
+        } else {
+            setIsAudioEnabled(false);
+        }
+    };
 
     const themeStyles = {
         '--bg': '#0a141a',
@@ -216,10 +344,12 @@ const DisplayView = () => {
             setRoundTimerStatus('complete');
             setRoundTimer(0);
             setTimerEndTime(null);
+            audioFlagsRef.current = { played2M: false, played1M: false, playedBuzzer: false, lastTickTime: null };
         } else {
             setRoundTimerStatus('ready');
             setRoundTimer(0);
             setTimerEndTime(null);
+            audioFlagsRef.current = { played2M: false, played1M: false, playedBuzzer: false, lastTickTime: null };
         }
     }, [games, tournament]);
 
@@ -239,6 +369,47 @@ const DisplayView = () => {
         const interval = setInterval(tick, 1000);
         return () => clearInterval(interval);
     }, [roundTimerStatus, timerEndTime]);
+
+    useEffect(() => {
+        if (roundTimerStatus !== 'active' || !isAudioEnabled) {
+            if (roundTimerStatus !== 'active') {
+                audioFlagsRef.current = { played2M: false, played1M: false, playedBuzzer: false, lastTickTime: null };
+            }
+            return;
+        }
+        
+        if (roundTimer > 120) {
+            audioFlagsRef.current.played2M = false;
+        }
+        if (roundTimer > 60) {
+            audioFlagsRef.current.played1M = false;
+        }
+        if (roundTimer > 0) {
+            audioFlagsRef.current.playedBuzzer = false;
+        }
+
+        if (roundTimer <= 120 && roundTimer > 115 && !audioFlagsRef.current.played2M) {
+            audioFlagsRef.current.played2M = true;
+            playDoubleBeep();
+        }
+        
+        if (roundTimer <= 60 && roundTimer > 55 && !audioFlagsRef.current.played1M) {
+            audioFlagsRef.current.played1M = true;
+            playDoubleBeep();
+        }
+        
+        if (roundTimer <= 10 && roundTimer >= 1) {
+            if (audioFlagsRef.current.lastTickTime !== roundTimer) {
+                audioFlagsRef.current.lastTickTime = roundTimer;
+                playTick();
+            }
+        }
+        
+        if (roundTimer === 0 && !audioFlagsRef.current.playedBuzzer) {
+            audioFlagsRef.current.playedBuzzer = true;
+            playBuzzer();
+        }
+    }, [roundTimer, roundTimerStatus, isAudioEnabled]);
 
     const getTimerConfig = () => {
         if (roundTimerStatus === 'active') {
@@ -373,7 +544,30 @@ const DisplayView = () => {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.8vw' }}>
+                <div style={{ display: 'flex', gap: '0.8vw', alignItems: 'center' }}>
+                    <button
+                        onClick={toggleAudio}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: isAudioEnabled ? 'rgba(93, 198, 207, 0.15)' : 'rgba(239, 68, 68, 0.1)',
+                            border: `1px solid ${isAudioEnabled ? 'var(--brand-teal)' : '#ef4444'}`,
+                            color: isAudioEnabled ? 'var(--brand-teal)' : '#ef4444',
+                            padding: '0.6vh 1.2vw',
+                            borderRadius: '10px',
+                            fontSize: '1.3vh',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}
+                    >
+                        {isAudioEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                        {isAudioEnabled ? 'Audio Active' : 'Audio Muted (Click to Unmute)'}
+                    </button>
+
                     <span style={{
                         fontSize: '1.4vh',
                         fontWeight: '800',

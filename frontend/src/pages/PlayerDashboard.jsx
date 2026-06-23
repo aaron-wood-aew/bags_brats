@@ -46,9 +46,19 @@ const PlayerDashboard = () => {
         userRef.current = user;
     }, [user]);
 
+    const isTimeExpired = () => {
+        if (!currentGame || !currentGame.end_time) return false;
+        const end = new Date(currentGame.end_time).getTime();
+        const now = Date.now();
+        return now > end;
+    };
+
+    const isScoreLocked = currentGame?.status === 'finalized' || 
+        (currentGame?.status === 'active' && isTimeExpired() && user.role !== 'admin');
+
     // Persist scores locally and send live updates to backend (debounced)
     useEffect(() => {
-        if (currentGame && currentGame.status !== 'finalized') {
+        if (currentGame && currentGame.status !== 'finalized' && !isScoreLocked) {
             sessionStorage.setItem('bb_score1', score1.toString());
             sessionStorage.setItem('bb_score2', score2.toString());
 
@@ -339,6 +349,10 @@ const PlayerDashboard = () => {
     };
 
     const handleSubmitScore = async () => {
+        if (isScoreLocked) {
+            setScoreError("Time has expired. Scores are locked.");
+            return;
+        }
         if (score1 === 0 && score2 === 0) {
             setScoreError("Both scores can't be zero. Track the score first!");
             return;
@@ -383,6 +397,7 @@ const PlayerDashboard = () => {
     };
 
     const handleScoreIncrement = (which, delta) => {
+        if (isScoreLocked) return;
         lastTapRef.current = Date.now();
         const setter = which === 'score1' ? setScore1 : setScore2;
         setter(prev => {
@@ -473,20 +488,20 @@ const PlayerDashboard = () => {
 
                     {/* + Button */}
                     <button
-                        onClick={() => !isFinalized && handleScoreIncrement(scoreKey, 1)}
-                        disabled={isFinalized}
+                        onClick={() => !isScoreLocked && handleScoreIncrement(scoreKey, 1)}
+                        disabled={isScoreLocked}
                         style={{
                             width: '100%',
                             height: '56px',
                             borderRadius: '12px',
-                            border: `2px solid ${colorBorder}`,
-                            background: isFinalized ? 'rgba(255,255,255,0.02)' : `linear-gradient(135deg, ${colorGlow}, rgba(0,0,0,0))`,
-                            color: isFinalized ? 'var(--text-muted)' : color,
+                            border: `2px solid ${isScoreLocked ? 'rgba(255,255,255,0.05)' : colorBorder}`,
+                            background: isScoreLocked ? 'rgba(255,255,255,0.02)' : `linear-gradient(135deg, ${colorGlow}, rgba(0,0,0,0))`,
+                            color: isScoreLocked ? 'var(--text-muted)' : color,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            cursor: isFinalized ? 'not-allowed' : 'pointer',
-                            opacity: isFinalized ? 0.3 : 1,
+                            cursor: isScoreLocked ? 'not-allowed' : 'pointer',
+                            opacity: isScoreLocked ? 0.3 : 1,
                             transition: 'all 0.15s ease',
                             fontSize: '28px',
                             fontWeight: '800'
@@ -517,20 +532,20 @@ const PlayerDashboard = () => {
 
                     {/* - Button */}
                     <button
-                        onClick={() => !isFinalized && handleScoreIncrement(scoreKey, -1)}
-                        disabled={isFinalized || score === 0}
+                        onClick={() => !isScoreLocked && handleScoreIncrement(scoreKey, -1)}
+                        disabled={isScoreLocked || score === 0}
                         style={{
                             width: '100%',
                             height: '56px',
                             borderRadius: '12px',
-                            border: `2px solid ${isFinalized || score === 0 ? 'rgba(255,255,255,0.05)' : colorBorder}`,
+                            border: `2px solid ${isScoreLocked || score === 0 ? 'rgba(255,255,255,0.05)' : colorBorder}`,
                             background: 'rgba(255,255,255,0.02)',
-                            color: isFinalized || score === 0 ? 'rgba(255,255,255,0.15)' : color,
+                            color: isScoreLocked || score === 0 ? 'rgba(255,255,255,0.15)' : color,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            cursor: (isFinalized || score === 0) ? 'not-allowed' : 'pointer',
-                            opacity: (isFinalized || score === 0) ? 0.3 : 0.7,
+                            cursor: (isScoreLocked || score === 0) ? 'not-allowed' : 'pointer',
+                            opacity: (isScoreLocked || score === 0) ? 0.3 : 0.7,
                             transition: 'all 0.15s ease',
                             fontSize: '28px',
                             fontWeight: '800'
@@ -651,21 +666,35 @@ const PlayerDashboard = () => {
                                 padding: '16px',
                                 fontSize: '16px',
                                 fontWeight: '800',
-                                background: (score1 > 0 || score2 > 0) 
-                                    ? (isSuddenDeath ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : 'linear-gradient(135deg, var(--brand-teal), #48abb3)') 
-                                    : 'rgba(255,255,255,0.05)',
-                                opacity: (score1 > 0 || score2 > 0) ? 1 : 0.5,
-                                border: (score1 > 0 || score2 > 0) ? 'none' : '1px solid var(--border)',
-                                color: (score1 > 0 || score2 > 0) ? 'white' : 'var(--text-muted)'
+                                background: isScoreLocked 
+                                    ? 'rgba(255,255,255,0.05)'
+                                    : (score1 > 0 || score2 > 0) 
+                                        ? (isSuddenDeath ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : 'linear-gradient(135deg, var(--brand-teal), #48abb3)') 
+                                        : 'rgba(255,255,255,0.05)',
+                                opacity: isScoreLocked ? 0.35 : ((score1 > 0 || score2 > 0) ? 1 : 0.5),
+                                border: isScoreLocked ? '1px solid rgba(255,255,255,0.05)' : ((score1 > 0 || score2 > 0) ? 'none' : '1px solid var(--border)'),
+                                color: isScoreLocked ? 'var(--text-muted)' : ((score1 > 0 || score2 > 0) ? 'white' : 'var(--text-muted)'),
+                                cursor: isScoreLocked ? 'not-allowed' : 'pointer'
                             }}
                             onClick={handleSubmitScore}
+                            disabled={isScoreLocked || (score1 === 0 && score2 === 0)}
                         >
                             <Save size={20} />
                             Submit Final Score
                         </button>
                     )}
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center' }}>
-                        {isFinalized ? "Results have been recorded by the Director or a teammate." : "Tap + or − to track. Only one player needs to submit."}
+                    <p style={{ 
+                        fontSize: '11px', 
+                        color: isScoreLocked && !isFinalized ? '#ef4444' : 'var(--text-muted)', 
+                        marginTop: '12px', 
+                        textAlign: 'center',
+                        fontWeight: isScoreLocked && !isFinalized ? '700' : 'normal'
+                    }}>
+                        {isFinalized 
+                            ? "Results have been recorded by the Director or a teammate." 
+                            : isScoreLocked 
+                                ? "Time has expired. Scores are locked. Contact Tournament Director." 
+                                : "Tap + or − to track. Only one player needs to submit."}
                     </p>
                 </div>
             );

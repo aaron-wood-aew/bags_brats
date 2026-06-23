@@ -366,7 +366,23 @@ def submit_score(game_id):
     game_data = mongo.db.games.find_one({"_id": ObjectId(game_id)})
     if not game_data:
         return jsonify({"error": "Game not found"}), 404
-    
+        
+    # Lock scores if time is up, except for admins
+    if game_data.get('end_time') and game_data.get('status') == 'active':
+        try:
+            end_time_str = game_data['end_time']
+            if end_time_str.endswith('Z'):
+                end_time = datetime.strptime(end_time_str, '%Y-%m-%dT%H:%M:%SZ')
+            else:
+                end_time = datetime.fromisoformat(end_time_str)
+                
+            if datetime.utcnow() > end_time:
+                current_user = User.find_by_id(mongo, current_user_id)
+                if not current_user or current_user.role != 'admin':
+                    return jsonify({"error": "Time has expired. Scores are locked."}), 403
+        except Exception as e:
+            print(f"Error checking score lock: {e}")
+
     # Check if user is a participant in this game
     all_players = game_data.get('team1_player_ids', []) + game_data.get('team2_player_ids', [])
     if current_user_id not in all_players:
@@ -416,6 +432,22 @@ def update_live_score(game_id):
     if not game_data:
         return jsonify({"error": "Game not found"}), 404
         
+    # Lock scores if time is up, except for admins
+    if game_data.get('end_time') and game_data.get('status') == 'active':
+        try:
+            end_time_str = game_data['end_time']
+            if end_time_str.endswith('Z'):
+                end_time = datetime.strptime(end_time_str, '%Y-%m-%dT%H:%M:%SZ')
+            else:
+                end_time = datetime.fromisoformat(end_time_str)
+                
+            if datetime.utcnow() > end_time:
+                current_user = User.find_by_id(mongo, current_user_id)
+                if not current_user or current_user.role != 'admin':
+                    return jsonify({"error": "Time has expired. Scores are locked."}), 403
+        except Exception as e:
+            print(f"Error checking score lock: {e}")
+
     # Check if user is a participant
     all_players = game_data.get('team1_player_ids', []) + game_data.get('team2_player_ids', [])
     if current_user_id not in all_players:
