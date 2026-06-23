@@ -57,7 +57,15 @@ const PlayerDashboard = () => {
         if (!currentGame || !currentGame.end_time) return false;
         const end = new Date(currentGame.end_time).getTime();
         const now = Date.now();
-        return now > end;
+        // Allow a 60-second buffer
+        return now > (end + 60000);
+    };
+
+    const isBufferActive = () => {
+        if (!currentGame || !currentGame.end_time) return false;
+        const end = new Date(currentGame.end_time).getTime();
+        const now = Date.now();
+        return now > end && now <= (end + 60000);
     };
 
     const isScoreLocked = currentGame?.status === 'finalized' || 
@@ -698,18 +706,20 @@ const PlayerDashboard = () => {
                     )}
                     <p style={{ 
                         fontSize: '11px', 
-                        color: isScoreLocked && !isFinalized ? (isBeforeStart() ? 'var(--brand-teal)' : '#ef4444') : 'var(--text-muted)', 
+                        color: isScoreLocked && !isFinalized ? (isBeforeStart() ? 'var(--brand-teal)' : '#ef4444') : (isBufferActive() ? '#f59e0b' : 'var(--text-muted)'), 
                         marginTop: '12px', 
                         textAlign: 'center',
-                        fontWeight: isScoreLocked && !isFinalized ? '700' : 'normal'
+                        fontWeight: (isScoreLocked && !isFinalized) || isBufferActive() ? '700' : 'normal'
                     }}>
                         {isFinalized 
                             ? "Results have been recorded by the Director or a teammate." 
                             : isBeforeStart()
                                 ? `Round starts in ${timer}s. Get ready!`
-                                : isScoreLocked 
-                                    ? "Time has expired. Scores are locked. Contact Tournament Director." 
-                                    : "Tap + or − to track. Only one player needs to submit."}
+                                : isBufferActive()
+                                    ? "Round ended! 1-minute buffer to submit final scores."
+                                    : isScoreLocked 
+                                        ? "Time has expired. Scores are locked. Contact Tournament Director." 
+                                        : "Tap + or − to track. Only one player needs to submit."}
                     </p>
                 </div>
             );

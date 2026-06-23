@@ -376,7 +376,7 @@ def submit_score(game_id):
             else:
                 end_time = datetime.fromisoformat(end_time_str)
                 
-            if datetime.utcnow() > end_time:
+            if datetime.utcnow() > (end_time + timedelta(seconds=60)):
                 current_user = User.find_by_id(mongo, current_user_id)
                 if not current_user or current_user.role != 'admin':
                     return jsonify({"error": "Time has expired. Scores are locked."}), 403
@@ -441,7 +441,7 @@ def update_live_score(game_id):
             else:
                 end_time = datetime.fromisoformat(end_time_str)
                 
-            if datetime.utcnow() > end_time:
+            if datetime.utcnow() > (end_time + timedelta(seconds=60)):
                 current_user = User.find_by_id(mongo, current_user_id)
                 if not current_user or current_user.role != 'admin':
                     return jsonify({"error": "Time has expired. Scores are locked."}), 403

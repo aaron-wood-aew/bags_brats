@@ -750,23 +750,6 @@ const DisplayView = () => {
                 >
                     {timerConfig.text}
                 </motion.div>
-
-                <div style={{
-                    fontSize: '1.3vh',
-                    fontWeight: '800',
-                    color: 'var(--text-muted)',
-                    letterSpacing: '0.15em',
-                    textTransform: 'uppercase',
-                    zIndex: 1,
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    marginTop: '0.5vh'
-                }}>
-                    <Clock size={12} />
-                    {timerConfig.subText}
-                </div>
             </section>
 
             {/* Live Matches Grid Section */}

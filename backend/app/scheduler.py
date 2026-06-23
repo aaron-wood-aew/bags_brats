@@ -35,6 +35,48 @@ def create_scheduler(mongo):
         replace_existing=True
     )
     
+    def auto_finalize_expired_games():
+        """Automatically finalize active games if end_time + 60 seconds has elapsed."""
+        try:
+            from datetime import datetime, timedelta
+            now = datetime.utcnow()
+            cutoff = (now - timedelta(seconds=60)).strftime('%Y-%m-%dT%H:%M:%SZ')
+            expired_games = list(mongo.db.games.find({
+                "status": "active",
+                "end_time": {"$lte": cutoff}
+            }))
+            
+            if expired_games:
+                for g in expired_games:
+                    mongo.db.games.update_one(
+                        {"_id": g["_id"]},
+                        {"$set": {
+                            "status": "finalized",
+                            "end_time": now.strftime('%Y-%m-%dT%H:%M:%SZ')
+                        }}
+                    )
+                    print(f"[Scheduler] Auto-finalized game {g['_id']} on Station {g.get('court') or g.get('game_number')}")
+                
+                # Broadcast standings update since games were finalized
+                try:
+                    t_id = str(expired_games[0]["tournament_id"])
+                    from app.events import broadcast_standings_update
+                    broadcast_standings_update(t_id)
+                except Exception as e:
+                    print(f"[Scheduler] Auto-finalize broadcast failed: {e}")
+        except Exception as e:
+            print(f"[Scheduler] Error in auto-finalize job: {e}")
+
+    # Schedule auto-finalize check every 10 seconds
+    scheduler.add_job(
+        auto_finalize_expired_games,
+        trigger='interval',
+        seconds=10,
+        id='auto_finalize',
+        name='Auto finalize expired games',
+        replace_existing=True
+    )
+    
     return scheduler
 
 
