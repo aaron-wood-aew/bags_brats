@@ -568,6 +568,78 @@ const DisplayView = () => {
                         {isAudioEnabled ? 'Audio Active' : 'Audio Muted (Click to Unmute)'}
                     </button>
 
+                    {isAudioEnabled && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4vw',
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            padding: '0.4vh 0.8vw',
+                            borderRadius: '10px',
+                            border: '1px solid var(--border)'
+                        }}>
+                            <button
+                                onClick={playDoubleBeep}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--brand-teal)',
+                                    fontSize: '1.2vh',
+                                    fontWeight: '800',
+                                    cursor: 'pointer',
+                                    padding: '0.2vh 0.5vw',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    transition: 'opacity 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.target.style.opacity = 0.7}
+                                onMouseLeave={(e) => e.target.style.opacity = 1}
+                            >
+                                Warning Beep
+                            </button>
+                            <span style={{ color: 'rgba(255, 255, 255, 0.1)', fontSize: '1.2vh' }}>|</span>
+                            <button
+                                onClick={playTick}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--brand-teal)',
+                                    fontSize: '1.2vh',
+                                    fontWeight: '800',
+                                    cursor: 'pointer',
+                                    padding: '0.2vh 0.5vw',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    transition: 'opacity 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.target.style.opacity = 0.7}
+                                onMouseLeave={(e) => e.target.style.opacity = 1}
+                            >
+                                Tick
+                            </button>
+                            <span style={{ color: 'rgba(255, 255, 255, 0.1)', fontSize: '1.2vh' }}>|</span>
+                            <button
+                                onClick={playBuzzer}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--brand-teal)',
+                                    fontSize: '1.2vh',
+                                    fontWeight: '800',
+                                    cursor: 'pointer',
+                                    padding: '0.2vh 0.5vw',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    transition: 'opacity 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.target.style.opacity = 0.7}
+                                onMouseLeave={(e) => e.target.style.opacity = 1}
+                            >
+                                Buzzer
+                            </button>
+                        </div>
+                    )}
+
                     <span style={{
                         fontSize: '1.4vh',
                         fontWeight: '800',
