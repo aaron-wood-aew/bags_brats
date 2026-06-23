@@ -48,7 +48,7 @@ const PlayerDashboard = () => {
 
     // Persist scores locally and send live updates to backend (debounced)
     useEffect(() => {
-        if (currentGame && currentGame.status === 'active') {
+        if (currentGame && currentGame.status !== 'finalized') {
             sessionStorage.setItem('bb_score1', score1.toString());
             sessionStorage.setItem('bb_score2', score2.toString());
 
@@ -56,6 +56,8 @@ const PlayerDashboard = () => {
             const isOnTeam1 = currentGame.team1_player_ids?.includes(userId);
             const serverScore1 = isOnTeam1 ? currentGame.score1 : currentGame.score2;
             const serverScore2 = isOnTeam1 ? currentGame.score2 : currentGame.score1;
+
+            console.log(`[LIVE SCORE EFFECT] Local: ${score1}-${score2}, Server: ${serverScore1}-${serverScore2}`);
 
             // Prevent loops by skipping updates if the local state matches what the server sent
             if (score1 === serverScore1 && score2 === serverScore2) {
@@ -70,6 +72,8 @@ const PlayerDashboard = () => {
                     const apiScore1 = isOnTeam1 ? score1 : score2;
                     const apiScore2 = isOnTeam1 ? score2 : score1;
 
+                    console.log(`[LIVE SCORE POST] Sending ${apiScore1}-${apiScore2} for game ${currentGame._id}`);
+
                     await axios.post(`${API_URL}/games/${currentGame._id}/live-score`, {
                         score1: apiScore1,
                         score2: apiScore2
@@ -77,7 +81,7 @@ const PlayerDashboard = () => {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                 } catch (err) {
-                    console.error("Failed to send live score update", err);
+                    console.error("[LIVE SCORE POST] Failed to send live score update", err);
                 }
             }, 500); // 500ms debounce
 
@@ -87,7 +91,7 @@ const PlayerDashboard = () => {
 
     // Sync local scores with server game scores when updated via socket or polling
     useEffect(() => {
-        if (currentGame && currentGame.status === 'active') {
+        if (currentGame && currentGame.status !== 'finalized') {
             // Ignore server updates if local user tapped recently to prevent lag race conditions
             if (Date.now() - lastTapRef.current < 2000) {
                 return;
@@ -98,6 +102,7 @@ const PlayerDashboard = () => {
             const serverScore2 = isOnTeam1 ? currentGame.score2 : currentGame.score1;
             
             if (score1 !== serverScore1 || score2 !== serverScore2) {
+                console.log(`[LIVE SCORE SYNC] Updating local scores from server: ${serverScore1}-${serverScore2}`);
                 setScore1(serverScore1);
                 setScore2(serverScore2);
                 sessionStorage.setItem('bb_score1', serverScore1.toString());
