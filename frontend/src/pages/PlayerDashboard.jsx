@@ -46,6 +46,13 @@ const PlayerDashboard = () => {
         userRef.current = user;
     }, [user]);
 
+    const isBeforeStart = () => {
+        if (!currentGame || !currentGame.start_time) return false;
+        const start = new Date(currentGame.start_time).getTime();
+        const now = Date.now();
+        return now < start;
+    };
+
     const isTimeExpired = () => {
         if (!currentGame || !currentGame.end_time) return false;
         const end = new Date(currentGame.end_time).getTime();
@@ -54,7 +61,7 @@ const PlayerDashboard = () => {
     };
 
     const isScoreLocked = currentGame?.status === 'finalized' || 
-        (currentGame?.status === 'active' && isTimeExpired() && user.role !== 'admin');
+        (currentGame?.status === 'active' && (isTimeExpired() || isBeforeStart()) && user.role !== 'admin');
 
     // Persist scores locally and send live updates to backend (debounced)
     useEffect(() => {
@@ -308,15 +315,21 @@ const PlayerDashboard = () => {
         }
 
         const interval = setInterval(() => {
+            const start = currentGame.start_time ? new Date(currentGame.start_time).getTime() : 0;
             const end = new Date(currentGame.end_time).getTime();
             const now = new Date().getTime();
-            const diff = Math.max(0, Math.floor((end - now) / 1000));
-            setTimer(diff);
-            if (diff <= 0) clearInterval(interval);
+            
+            if (now < start) {
+                setTimer(Math.max(0, Math.floor((start - now) / 1000)));
+            } else {
+                const diff = Math.max(0, Math.floor((end - now) / 1000));
+                setTimer(diff);
+                if (diff <= 0) clearInterval(interval);
+            }
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [currentGame?._id, currentGame?.status, currentGame?.end_time]);
+    }, [currentGame?._id, currentGame?.status, currentGame?.start_time, currentGame?.end_time]);
 
     // Automatically redirect to dashboard if the active game is completed/finalized
     useEffect(() => {
@@ -685,16 +698,18 @@ const PlayerDashboard = () => {
                     )}
                     <p style={{ 
                         fontSize: '11px', 
-                        color: isScoreLocked && !isFinalized ? '#ef4444' : 'var(--text-muted)', 
+                        color: isScoreLocked && !isFinalized ? (isBeforeStart() ? 'var(--brand-teal)' : '#ef4444') : 'var(--text-muted)', 
                         marginTop: '12px', 
                         textAlign: 'center',
                         fontWeight: isScoreLocked && !isFinalized ? '700' : 'normal'
                     }}>
                         {isFinalized 
                             ? "Results have been recorded by the Director or a teammate." 
-                            : isScoreLocked 
-                                ? "Time has expired. Scores are locked. Contact Tournament Director." 
-                                : "Tap + or − to track. Only one player needs to submit."}
+                            : isBeforeStart()
+                                ? `Round starts in ${timer}s. Get ready!`
+                                : isScoreLocked 
+                                    ? "Time has expired. Scores are locked. Contact Tournament Director." 
+                                    : "Tap + or − to track. Only one player needs to submit."}
                     </p>
                 </div>
             );

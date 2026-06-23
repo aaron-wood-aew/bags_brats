@@ -330,14 +330,22 @@ const DisplayView = () => {
             return;
         }
 
-        const hasActive = currentRoundGames.some(g => g.status === 'active');
+        const activeGames = currentRoundGames.filter(g => g.status === 'active');
+        const hasActive = activeGames.length > 0;
         const allFinalized = currentRoundGames.every(g => g.status === 'finalized');
 
         if (hasActive) {
-            setRoundTimerStatus('active');
-            const activeGames = currentRoundGames.filter(g => g.status === 'active' && g.end_time);
-            if (activeGames.length > 0) {
-                const maxEnd = Math.max(...activeGames.map(g => new Date(g.end_time).getTime()));
+            // Check if active games are in pre-round countdown
+            const firstActive = activeGames[0];
+            const startMs = firstActive?.start_time ? new Date(firstActive.start_time).getTime() : 0;
+            const nowMs = Date.now();
+            
+            if (startMs > nowMs) {
+                setRoundTimerStatus('starting');
+                setTimerEndTime(startMs);
+            } else {
+                setRoundTimerStatus('active');
+                const maxEnd = Math.max(...activeGames.map(g => g.end_time ? new Date(g.end_time).getTime() : 0));
                 setTimerEndTime(maxEnd);
             }
         } else if (allFinalized) {
@@ -354,7 +362,7 @@ const DisplayView = () => {
     }, [games, tournament]);
 
     useEffect(() => {
-        if (roundTimerStatus !== 'active' || !timerEndTime) {
+        if ((roundTimerStatus !== 'active' && roundTimerStatus !== 'starting') || !timerEndTime) {
             setRoundTimer(0);
             return;
         }
@@ -363,17 +371,37 @@ const DisplayView = () => {
             const now = new Date().getTime();
             const diff = Math.max(0, Math.floor((timerEndTime - now) / 1000));
             setRoundTimer(diff);
+
+            // If starting countdown finishes, transition automatically to active
+            if (roundTimerStatus === 'starting' && diff <= 0) {
+                const activeGames = currentRoundGames.filter(g => g.status === 'active');
+                if (activeGames.length > 0) {
+                    setRoundTimerStatus('active');
+                    const maxEnd = Math.max(...activeGames.map(g => g.end_time ? new Date(g.end_time).getTime() : 0));
+                    setTimerEndTime(maxEnd);
+                }
+            }
         };
 
         tick();
         const interval = setInterval(tick, 1000);
         return () => clearInterval(interval);
-    }, [roundTimerStatus, timerEndTime]);
+    }, [roundTimerStatus, timerEndTime, currentRoundGames]);
 
     useEffect(() => {
-        if (roundTimerStatus !== 'active' || !isAudioEnabled) {
-            if (roundTimerStatus !== 'active') {
+        if ((roundTimerStatus !== 'active' && roundTimerStatus !== 'starting') || !isAudioEnabled) {
+            if (roundTimerStatus !== 'active' && roundTimerStatus !== 'starting') {
                 audioFlagsRef.current = { played2M: false, played1M: false, playedBuzzer: false, lastTickTime: null };
+            }
+            return;
+        }
+        
+        if (roundTimerStatus === 'starting') {
+            if (roundTimer > 0) {
+                if (audioFlagsRef.current.lastTickTime !== roundTimer) {
+                    audioFlagsRef.current.lastTickTime = roundTimer;
+                    playTick();
+                }
             }
             return;
         }
@@ -412,6 +440,15 @@ const DisplayView = () => {
     }, [roundTimer, roundTimerStatus, isAudioEnabled]);
 
     const getTimerConfig = () => {
+        if (roundTimerStatus === 'starting') {
+            return {
+                color: '#60a5fa',
+                text: String(roundTimer),
+                subText: 'ROUND STARTING IN...',
+                shadow: '0 0 30px rgba(96, 165, 250, 0.4)',
+                pulse: true
+            };
+        }
         if (roundTimerStatus === 'active') {
             if (roundTimer < 30) {
                 return {

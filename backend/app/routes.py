@@ -900,8 +900,9 @@ def start_round():
         return jsonify({"error": f"No upcoming games found for Round {round_number}"}), 400
     
     now = datetime.utcnow()
-    start_time = now.strftime('%Y-%m-%dT%H:%M:%SZ')
-    end_time = (now + timedelta(minutes=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    start_time_dt = now + timedelta(seconds=15)
+    start_time = start_time_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+    end_time = (start_time_dt + timedelta(minutes=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
     
     for g in games:
         mongo.db.games.update_one(
@@ -1115,9 +1116,10 @@ def start_game(game_id):
     
     game = Game(game_data)
     game.status = 'active'
-    game.start_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    start_time_dt = datetime.utcnow() + timedelta(seconds=15)
+    game.start_time = start_time_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
     # 20 minutes duration
-    game.end_time = (datetime.utcnow() + timedelta(minutes=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    game.end_time = (start_time_dt + timedelta(minutes=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
     game.save(mongo)
     
     # Broadcast game start
@@ -1148,8 +1150,9 @@ def start_all_games():
     }))
     
     now = datetime.utcnow()
-    start_time = now.strftime('%Y-%m-%dT%H:%M:%SZ')
-    end_time = (now + timedelta(minutes=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    start_time_dt = now + timedelta(seconds=15)
+    start_time = start_time_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+    end_time = (start_time_dt + timedelta(minutes=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
     
     count = 0
     for g in games:
