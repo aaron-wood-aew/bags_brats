@@ -431,10 +431,10 @@ def update_live_score(game_id):
         {"$set": {"score1": score1, "score2": score2}}
     )
     
-    # Broadcast standings update (triggers display page socket refresh)
+    # Broadcast live score update to specific room
     try:
-        from app.events import broadcast_standings_update
-        broadcast_standings_update(str(game_data['tournament_id']))
+        from app.events import broadcast_live_score
+        broadcast_live_score(str(game_data['tournament_id']), game_id, score1, score2)
     except Exception as e:
         print(f"Live score broadcast failed: {e}")
         

@@ -41,3 +41,10 @@ def broadcast_blackout(tournament_id, is_blackout):
 def broadcast_standings_update(tournament_id):
     socketio.emit('standings_updated', {}, room=tournament_id)
 
+def broadcast_live_score(tournament_id, game_id, score1, score2):
+    socketio.emit('live_score_updated', {
+        "game_id": str(game_id),
+        "score1": score1,
+        "score2": score2
+    }, room=tournament_id)
+

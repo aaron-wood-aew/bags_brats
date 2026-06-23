@@ -165,10 +165,21 @@ const DisplayView = () => {
 
         SocketService.on('standings_updated', fetchData);
         SocketService.on('pairings_revealed', fetchData);
+        
+        SocketService.on('live_score_updated', (data) => {
+            setGames(prevGames => 
+                prevGames.map(g => 
+                    g._id === data.game_id 
+                        ? { ...g, score1: data.score1, score2: data.score2 } 
+                        : g
+                )
+            );
+        });
 
         return () => {
             SocketService.off('standings_updated', fetchData);
             SocketService.off('pairings_revealed', fetchData);
+            SocketService.off('live_score_updated');
         };
     }, []);
 

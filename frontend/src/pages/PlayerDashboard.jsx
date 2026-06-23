@@ -34,6 +34,17 @@ const PlayerDashboard = () => {
 
     const lastTapRef = useRef(0);
     const lastGameIdRef = useRef(null);
+    const currentGameRef = useRef(null);
+    const userRef = useRef(null);
+
+    // Keep refs updated to prevent stale socket closures
+    useEffect(() => {
+        currentGameRef.current = currentGame;
+    }, [currentGame]);
+
+    useEffect(() => {
+        userRef.current = user;
+    }, [user]);
 
     // Persist scores locally and send live updates to backend (debounced)
     useEffect(() => {
@@ -64,28 +75,7 @@ const PlayerDashboard = () => {
 
             return () => clearTimeout(delayDebounceFn);
         }
-    }, [score1, score2, currentGame]);
-
-    // Sync local scores with server game scores when updated from socket
-    useEffect(() => {
-        if (currentGame && currentGame.status === 'active') {
-            // Ignore server updates if local user tapped recently to prevent lag race conditions
-            if (Date.now() - lastTapRef.current < 2000) {
-                return;
-            }
-            const userId = user.id || user._id;
-            const isOnTeam1 = currentGame.team1_player_ids?.includes(userId);
-            const serverScore1 = isOnTeam1 ? currentGame.score1 : currentGame.score2;
-            const serverScore2 = isOnTeam1 ? currentGame.score2 : currentGame.score1;
-            
-            if (score1 !== serverScore1 || score2 !== serverScore2) {
-                setScore1(serverScore1);
-                setScore2(serverScore2);
-                sessionStorage.setItem('bb_score1', serverScore1.toString());
-                sessionStorage.setItem('bb_score2', serverScore2.toString());
-            }
-        }
-    }, [currentGame?.score1, currentGame?.score2]);
+    }, [score1, score2, currentGame?._id, currentGame?.status]);
 
     // Reset scores when a NEW game starts (different game ID) or load initial scores from server
     useEffect(() => {
@@ -112,7 +102,7 @@ const PlayerDashboard = () => {
                 }
             }
         }
-    }, [currentGame]);
+    }, [currentGame?._id]);
 
 
     const formatDateShort = (dateStr) => {
@@ -218,6 +208,29 @@ const PlayerDashboard = () => {
                 // Listen for updates to refresh data
                 SocketService.on('standings_updated', fetchData);
 
+                // Listen for real-time live score updates to keep teammates in sync without re-fetching API
+                SocketService.on('live_score_updated', (data) => {
+                    const currentG = currentGameRef.current;
+                    const currentUser = userRef.current;
+                    if (currentG && data.game_id === currentG._id) {
+                        // Update currentGame locally in state
+                        setCurrentGame(prev => prev ? { ...prev, score1: data.score1, score2: data.score2 } : null);
+
+                        // Sync local user track scores if they haven't tapped recently
+                        if (Date.now() - lastTapRef.current >= 2000) {
+                            const userId = currentUser.id || currentUser._id;
+                            const isOnTeam1 = currentG.team1_player_ids?.includes(userId);
+                            const serverScore1 = isOnTeam1 ? data.score1 : data.score2;
+                            const serverScore2 = isOnTeam1 ? data.score2 : data.score1;
+
+                            setScore1(serverScore1);
+                            setScore2(serverScore2);
+                            sessionStorage.setItem('bb_score1', serverScore1.toString());
+                            sessionStorage.setItem('bb_score2', serverScore2.toString());
+                        }
+                    }
+                });
+
             } catch (err) {
                 console.error("Dashboard fetch error", err);
             }
@@ -226,6 +239,7 @@ const PlayerDashboard = () => {
 
         return () => {
             SocketService.off('standings_updated', fetchData);
+            SocketService.off('live_score_updated');
             SocketService.disconnect();
         };
     }, []);
@@ -258,7 +272,7 @@ const PlayerDashboard = () => {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [currentGame]);
+    }, [currentGame?._id, currentGame?.status, currentGame?.end_time]);
 
     // Automatically redirect to dashboard if the active game is completed/finalized
     useEffect(() => {
