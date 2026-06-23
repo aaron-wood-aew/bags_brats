@@ -1070,35 +1070,54 @@ const AdminDashboard = () => {
                                     })()}
 
                                     {/* Open Check-In Early Button */}
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                const token = localStorage.getItem('token');
-                                                const res = await axios.post(`${API_URL}/admin/tournament/toggle-checkin`,
-                                                    { check_in_open: !activeTournament.check_in_open },
-                                                    { headers: { Authorization: `Bearer ${token}` } }
-                                                );
-                                                showToast(res.data.msg, "success");
-                                                fetchActiveTournament();
-                                            } catch (err) {
-                                                showToast(err.response?.data?.error || 'Failed to toggle check-in', 'error');
-                                            }
-                                        }}
-                                        className="btn-primary"
-                                        style={{
-                                            width: '100%',
-                                            marginTop: '16px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '8px',
-                                            background: activeTournament.check_in_open ? 'rgba(16, 185, 129, 0.1)' : 'rgba(251, 191, 36, 0.1)',
-                                            border: activeTournament.check_in_open ? '1px solid #10b981' : '1px solid #fbbf24',
-                                            color: activeTournament.check_in_open ? '#10b981' : '#fbbf24'
-                                        }}
-                                    >
-                                        {activeTournament.check_in_open ? '🔓 Check-In Open (Close Early)' : '⏰ Open Check-In Early'}
-                                    </button>
+                                    {(() => {
+                                        const isOpenBySchedule = activeTournament.check_in_currently_open && !activeTournament.check_in_open;
+                                        const isOpenManually = activeTournament.check_in_currently_open && activeTournament.check_in_open;
+
+                                        return (
+                                            <button
+                                                onClick={async () => {
+                                                    if (isOpenBySchedule) return;
+                                                    try {
+                                                        const token = localStorage.getItem('token');
+                                                        const res = await axios.post(`${API_URL}/admin/tournament/toggle-checkin`,
+                                                            { check_in_open: !activeTournament.check_in_open },
+                                                            { headers: { Authorization: `Bearer ${token}` } }
+                                                        );
+                                                        showToast(res.data.msg, "success");
+                                                        fetchActiveTournament();
+                                                    } catch (err) {
+                                                        showToast(err.response?.data?.error || 'Failed to toggle check-in', 'error');
+                                                    }
+                                                }}
+                                                disabled={isOpenBySchedule}
+                                                className="btn-primary"
+                                                style={{
+                                                    width: '100%',
+                                                    marginTop: '16px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '8px',
+                                                    background: isOpenManually ? 'rgba(16, 185, 129, 0.1)' : 
+                                                                isOpenBySchedule ? 'rgba(16, 185, 129, 0.05)' : 
+                                                                'rgba(251, 191, 36, 0.1)',
+                                                    border: isOpenManually ? '1px solid #10b981' : 
+                                                            isOpenBySchedule ? '1px solid rgba(16, 185, 129, 0.4)' : 
+                                                            '1px solid #fbbf24',
+                                                    color: isOpenManually ? '#10b981' : 
+                                                           isOpenBySchedule ? 'rgba(16, 185, 129, 0.6)' : 
+                                                           '#fbbf24',
+                                                    cursor: isOpenBySchedule ? 'default' : 'pointer',
+                                                    opacity: isOpenBySchedule ? 0.7 : 1
+                                                }}
+                                            >
+                                                {isOpenManually ? '🔓 Check-In Open (Close Early)' :
+                                                 isOpenBySchedule ? '🔓 Check-In Open (by schedule)' :
+                                                 '⏰ Open Check-In Early'}
+                                            </button>
+                                        );
+                                    })()}
 
                                     {/* End Tournament Button */}
                                     <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>

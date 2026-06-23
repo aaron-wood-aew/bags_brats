@@ -94,6 +94,7 @@ class Tournament(BaseModel):
         self.rounds_per_day = data.get('rounds_per_day', 2)  # Number of rounds per day
         self.cancelled_dates = data.get('cancelled_dates', [])  # List of cancelled day_index values
         self.start_times = data.get('start_times', []) # List of ISO time strings for each date
+        self.check_in_open = data.get('check_in_open', False)
 
     @classmethod
     def find_active(cls, mongo):

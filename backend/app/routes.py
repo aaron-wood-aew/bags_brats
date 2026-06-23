@@ -434,6 +434,11 @@ def get_active_tournament():
     data['is_tournament_day'] = today in (tournament.dates or [])
     data['today'] = today
     
+    # Check if check-in is currently open (either manual override or time window)
+    from app.scheduler import is_checkin_window_open
+    is_open, _ = is_checkin_window_open(mongo)
+    data['check_in_currently_open'] = is_open
+    
     return jsonify(data), 200
 
 @bp.route('/tournaments/standings', methods=['GET'])
