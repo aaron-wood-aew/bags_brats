@@ -32,28 +32,84 @@ const PlayerDashboard = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('dashboard');
 
-    // Persist scores to sessionStorage on change
+    const lastTapRef = useRef(0);
+    const lastGameIdRef = useRef(null);
+
+    // Persist scores locally and send live updates to backend (debounced)
     useEffect(() => {
-        if (currentGame && currentGame.status !== 'finalized') {
+        if (currentGame && currentGame.status === 'active') {
             sessionStorage.setItem('bb_score1', score1.toString());
             sessionStorage.setItem('bb_score2', score2.toString());
+
+            const delayDebounceFn = setTimeout(async () => {
+                try {
+                    const token = localStorage.getItem('token');
+                    const userId = user.id || user._id;
+                    const isOnTeam1 = currentGame.team1_player_ids?.includes(userId);
+                    
+                    // Map local display scores back to API teams
+                    const apiScore1 = isOnTeam1 ? score1 : score2;
+                    const apiScore2 = isOnTeam1 ? score2 : score1;
+
+                    await axios.post(`${API_URL}/games/${currentGame._id}/live-score`, {
+                        score1: apiScore1,
+                        score2: apiScore2
+                    }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                } catch (err) {
+                    console.error("Failed to send live score update", err);
+                }
+            }, 500); // 500ms debounce
+
+            return () => clearTimeout(delayDebounceFn);
         }
     }, [score1, score2, currentGame]);
 
-    // Reset scores when a NEW game starts (different game ID)
-    const lastGameIdRef = useRef(null);
+    // Sync local scores with server game scores when updated from socket
     useEffect(() => {
-        if (currentGame && currentGame._id !== lastGameIdRef.current) {
-            lastGameIdRef.current = currentGame._id;
-            // Check if we have saved scores for THIS game
-            const savedGameId = sessionStorage.getItem('bb_game_id');
-            if (savedGameId !== currentGame._id) {
-                // New game — reset scores
-                setScore1(0);
-                setScore2(0);
-                sessionStorage.setItem('bb_game_id', currentGame._id);
-                sessionStorage.setItem('bb_score1', '0');
-                sessionStorage.setItem('bb_score2', '0');
+        if (currentGame && currentGame.status === 'active') {
+            // Ignore server updates if local user tapped recently to prevent lag race conditions
+            if (Date.now() - lastTapRef.current < 2000) {
+                return;
+            }
+            const userId = user.id || user._id;
+            const isOnTeam1 = currentGame.team1_player_ids?.includes(userId);
+            const serverScore1 = isOnTeam1 ? currentGame.score1 : currentGame.score2;
+            const serverScore2 = isOnTeam1 ? currentGame.score2 : currentGame.score1;
+            
+            if (score1 !== serverScore1 || score2 !== serverScore2) {
+                setScore1(serverScore1);
+                setScore2(serverScore2);
+                sessionStorage.setItem('bb_score1', serverScore1.toString());
+                sessionStorage.setItem('bb_score2', serverScore2.toString());
+            }
+        }
+    }, [currentGame?.score1, currentGame?.score2]);
+
+    // Reset scores when a NEW game starts (different game ID) or load initial scores from server
+    useEffect(() => {
+        if (currentGame) {
+            const userId = user.id || user._id;
+            const isOnTeam1 = currentGame.team1_player_ids?.includes(userId);
+            const serverScore1 = isOnTeam1 ? currentGame.score1 : currentGame.score2;
+            const serverScore2 = isOnTeam1 ? currentGame.score2 : currentGame.score1;
+
+            if (currentGame._id !== lastGameIdRef.current) {
+                lastGameIdRef.current = currentGame._id;
+                const savedGameId = sessionStorage.getItem('bb_game_id');
+                if (savedGameId === currentGame._id) {
+                    const saved1 = sessionStorage.getItem('bb_score1');
+                    const saved2 = sessionStorage.getItem('bb_score2');
+                    setScore1(saved1 !== null ? parseInt(saved1) : serverScore1);
+                    setScore2(saved2 !== null ? parseInt(saved2) : serverScore2);
+                } else {
+                    setScore1(serverScore1);
+                    setScore2(serverScore2);
+                    sessionStorage.setItem('bb_game_id', currentGame._id);
+                    sessionStorage.setItem('bb_score1', serverScore1.toString());
+                    sessionStorage.setItem('bb_score2', serverScore2.toString());
+                }
             }
         }
     }, [currentGame]);
@@ -279,6 +335,7 @@ const PlayerDashboard = () => {
     };
 
     const handleScoreIncrement = (which, delta) => {
+        lastTapRef.current = Date.now();
         const setter = which === 'score1' ? setScore1 : setScore2;
         setter(prev => {
             const next = Math.max(0, Math.min(50, prev + delta));

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Trophy, Clock, Tv, Gamepad2 } from 'lucide-react';
+import { Trophy, Clock, Tv } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SocketService from '../services/socket';
 import API_URL from '../config';
@@ -14,12 +14,12 @@ const CourtCard = ({ game }) => {
     const getBorderColor = () => {
         if (isActive) return 'var(--brand-teal)';
         if (isFinal) return 'rgba(16, 185, 129, 0.3)';
-        return 'rgba(255, 255, 255, 0.1)';
+        return 'rgba(255, 255, 255, 0.08)';
     };
 
     const getBgColor = () => {
-        if (isActive) return 'rgba(93, 198, 207, 0.03)';
-        if (isFinal) return 'rgba(16, 185, 129, 0.01)';
+        if (isActive) return 'rgba(93, 198, 207, 0.05)';
+        if (isFinal) return 'rgba(16, 185, 129, 0.02)';
         return 'rgba(255,255,255,0.01)';
     };
 
@@ -29,37 +29,38 @@ const CourtCard = ({ game }) => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.3 }}
             className="glass-card"
             style={{
-                padding: '24px 32px',
+                padding: '1.5vh 2vw',
                 border: `2px solid ${getBorderColor()}`,
                 background: getBgColor(),
-                boxShadow: isActive ? '0 0 30px var(--brand-teal-glow)' : 'none',
-                opacity: isFinal ? 0.65 : 1,
-                transition: 'all 0.4s ease'
+                boxShadow: isActive ? '0 0 15px var(--brand-teal-glow)' : 'none',
+                opacity: isFinal ? 0.55 : 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                height: '100%',
+                boxSizing: 'border-box',
+                borderRadius: '16px',
+                transition: 'all 0.3s ease'
             }}
         >
-            {/* Station Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5vh' }}>
                 <span style={{ 
-                    fontSize: '22px', 
+                    fontSize: '2vh', 
                     fontWeight: '800', 
                     textTransform: 'uppercase', 
                     color: isActive ? 'var(--brand-teal)' : '#f8fafc',
-                    letterSpacing: '0.1em',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px'
+                    letterSpacing: '0.05em'
                 }}>
-                    <Gamepad2 size={24} style={{ color: isActive ? 'var(--brand-teal)' : 'var(--text-muted)' }} />
                     Station {game.court || game.game_number}
                 </span>
 
                 <span style={{
-                    padding: '6px 14px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '1.1vh',
                     fontWeight: '800',
                     textTransform: 'uppercase',
                     background: isActive ? 'rgba(93, 198, 207, 0.15)' : 
@@ -68,89 +69,59 @@ const CourtCard = ({ game }) => {
                     color: isActive ? 'var(--brand-teal)' : 
                            isFinal ? '#10b981' : 
                            'var(--text-muted)',
-                    border: `1.5px solid ${
+                    border: `1px solid ${
                         isActive ? 'var(--brand-teal)' : 
                         isFinal ? '#10b981' : 
-                        'rgba(255, 255, 255, 0.2)'
+                        'rgba(255, 255, 255, 0.1)'
                     }`
                 }}>
-                    {isActive ? 'Live Match' : 
-                     isFinal ? 'Final' : 
-                     'Ready'}
+                    {isActive ? 'Live' : isFinal ? 'Final' : 'Ready'}
                 </span>
             </div>
 
-            {/* Scoreboard Block */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', justifyContent: 'space-between' }}>
-                {/* Team 1 */}
-                <div style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ 
-                        fontSize: '20px', 
-                        fontWeight: '800', 
-                        marginBottom: '16px', 
-                        minHeight: '60px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        color: isFinal && !isTeam1Winning ? 'var(--text-muted)' : 'white',
-                        lineHeight: 1.2
-                    }}>
-                        {game.team1_player_names?.join(' & ') || '---'}
-                    </div>
-                    <div style={{
-                        fontSize: '72px',
-                        fontWeight: '900',
-                        fontFamily: 'monospace',
-                        color: isFinal && isTeam1Winning ? 'var(--brand-teal)' : 
-                               isFinal ? 'var(--text-muted)' : 
-                               isActive && isTeam1Winning ? 'var(--brand-teal)' : 'white',
-                        transition: 'color 0.3s ease',
-                        textShadow: isActive && isTeam1Winning ? '0 0 15px var(--brand-teal-glow)' : 'none'
-                    }}>
-                        {game.score1}
-                    </div>
-                </div>
-
-                <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: '900', 
-                    opacity: 0.15, 
-                    userSelect: 'none',
-                    color: 'white',
-                    alignSelf: 'flex-end',
-                    marginBottom: '18px'
+            {/* Giant Centered Scores */}
+            <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '2vw',
+                flexGrow: 1
+            }}>
+                <span style={{
+                    fontSize: '6vh',
+                    fontWeight: '900',
+                    fontFamily: 'monospace',
+                    color: isFinal && isTeam1Winning ? 'var(--brand-teal)' : 
+                           isFinal ? 'var(--text-muted)' : 
+                           isActive && isTeam1Winning ? 'var(--brand-teal)' : 'white',
+                    textShadow: isActive && isTeam1Winning ? '0 0 10px var(--brand-teal-glow)' : 'none',
+                    lineHeight: 1
                 }}>
-                    VS
-                </div>
+                    {game.score1}
+                </span>
 
-                {/* Team 2 */}
-                <div style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ 
-                        fontSize: '20px', 
-                        fontWeight: '800', 
-                        marginBottom: '16px', 
-                        minHeight: '60px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        color: isFinal && !isTeam2Winning ? 'var(--text-muted)' : 'white',
-                        lineHeight: 1.2
-                    }}>
-                        {game.team2_player_names?.join(' & ') || '---'}
-                    </div>
-                    <div style={{
-                        fontSize: '72px',
-                        fontWeight: '900',
-                        fontFamily: 'monospace',
-                        color: isFinal && isTeam2Winning ? 'var(--brand-teal)' : 
-                               isFinal ? 'var(--text-muted)' : 
-                               isActive && isTeam2Winning ? 'var(--brand-teal)' : 'white',
-                        transition: 'color 0.3s ease',
-                        textShadow: isActive && isTeam2Winning ? '0 0 15px var(--brand-teal-glow)' : 'none'
-                    }}>
-                        {game.score2}
-                    </div>
-                </div>
+                <span style={{ 
+                    fontSize: '3.5vh', 
+                    fontWeight: '800', 
+                    opacity: 0.15,
+                    color: 'white',
+                    lineHeight: 1
+                }}>
+                    —
+                </span>
+
+                <span style={{
+                    fontSize: '6vh',
+                    fontWeight: '900',
+                    fontFamily: 'monospace',
+                    color: isFinal && isTeam2Winning ? 'var(--brand-teal)' : 
+                           isFinal ? 'var(--text-muted)' : 
+                           isActive && isTeam2Winning ? 'var(--brand-teal)' : 'white',
+                    textShadow: isActive && isTeam2Winning ? '0 0 10px var(--brand-teal-glow)' : 'none',
+                    lineHeight: 1
+                }}>
+                    {game.score2}
+                </span>
             </div>
         </motion.div>
     );
@@ -160,7 +131,7 @@ const DisplayView = () => {
     const [tournament, setTournament] = useState(null);
     const [games, setGames] = useState([]);
     const [roundTimer, setRoundTimer] = useState(0);
-    const [roundTimerStatus, setRoundTimerStatus] = useState('pending'); // 'pending', 'ready', 'active', 'complete'
+    const [roundTimerStatus, setRoundTimerStatus] = useState('pending');
     const [timerEndTime, setTimerEndTime] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -255,7 +226,6 @@ const DisplayView = () => {
         return () => clearInterval(interval);
     }, [roundTimerStatus, timerEndTime]);
 
-    // Timer layout configuration based on status & remaining seconds
     const getTimerConfig = () => {
         if (roundTimerStatus === 'active') {
             if (roundTimer < 30) {
@@ -263,7 +233,7 @@ const DisplayView = () => {
                     color: '#ef4444',
                     text: `${Math.floor(roundTimer / 60)}:${String(roundTimer % 60).padStart(2, '0')}`,
                     subText: 'CRITICAL TIME REMAINING',
-                    shadow: '0 0 40px rgba(239, 68, 68, 0.4)',
+                    shadow: '0 0 30px rgba(239, 68, 68, 0.4)',
                     pulse: true
                 };
             }
@@ -272,7 +242,7 @@ const DisplayView = () => {
                     color: '#fbbf24',
                     text: `${Math.floor(roundTimer / 60)}:${String(roundTimer % 60).padStart(2, '0')}`,
                     subText: 'TWO MINUTES REMAINING',
-                    shadow: '0 0 40px rgba(251, 191, 36, 0.3)',
+                    shadow: '0 0 30px rgba(251, 191, 36, 0.3)',
                     pulse: true
                 };
             }
@@ -280,7 +250,7 @@ const DisplayView = () => {
                 color: 'var(--brand-teal)',
                 text: `${Math.floor(roundTimer / 60)}:${String(roundTimer % 60).padStart(2, '0')}`,
                 subText: 'ROUND TIMER ACTIVE',
-                shadow: '0 0 40px var(--brand-teal-glow)',
+                shadow: '0 0 30px var(--brand-teal-glow)',
                 pulse: false
             };
         }
@@ -289,7 +259,7 @@ const DisplayView = () => {
                 color: '#10b981',
                 text: 'COMPLETE',
                 subText: 'ALL GAMES RECORDED',
-                shadow: '0 0 30px rgba(16, 185, 129, 0.3)',
+                shadow: '0 0 20px rgba(16, 185, 129, 0.3)',
                 pulse: false
             };
         }
@@ -298,7 +268,7 @@ const DisplayView = () => {
                 color: '#60a5fa',
                 text: 'READY',
                 subText: 'WAITING FOR ADMIN TO START',
-                shadow: '0 0 30px rgba(96, 165, 250, 0.3)',
+                shadow: '0 0 20px rgba(96, 165, 250, 0.3)',
                 pulse: false
             };
         }
@@ -312,6 +282,14 @@ const DisplayView = () => {
     };
 
     const timerConfig = getTimerConfig();
+
+    // Dynamically calculate grid columns based on count
+    const getGridColumns = () => {
+        const count = currentRoundGames.length;
+        if (count <= 4) return `repeat(${count || 1}, 1fr)`;
+        if (count <= 9) return 'repeat(3, 1fr)';
+        return 'repeat(4, 1fr)';
+    };
 
     if (loading) {
         return (
@@ -327,74 +305,81 @@ const DisplayView = () => {
                 ...themeStyles
             }}>
                 <div style={{
-                    width: '50px',
-                    height: '50px',
-                    border: '5px solid rgba(255, 255, 255, 0.1)',
-                    borderTop: '5px solid var(--brand-teal)',
+                    width: '40px',
+                    height: '40px',
+                    border: '4px solid rgba(255, 255, 255, 0.1)',
+                    borderTop: '4px solid var(--brand-teal)',
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite'
                 }} />
-                <p style={{ marginTop: '20px', fontWeight: '600', letterSpacing: '0.05em' }}>CONNECTING TO ARENA SCREEN...</p>
+                <p style={{ marginTop: '16px', fontWeight: '600', letterSpacing: '0.05em', fontSize: '14px' }}>CONNECTING TO ARENA SCREEN...</p>
             </div>
         );
     }
 
     return (
         <div style={{
-            minHeight: '100vh',
+            height: '100vh',
+            maxHeight: '100vh',
             background: 'radial-gradient(circle at top right, #132029, #0a141a)',
             color: '#f8fafc',
-            padding: '30px 45px',
+            padding: '2.5vh 3vw',
             fontFamily: 'var(--font-main)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '30px',
+            justifyContent: 'space-between',
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+            gap: '2vh',
             ...themeStyles
         }}>
-            {/* Top Navigation / Status Area */}
+            {/* Header Area */}
             <header style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 background: 'rgba(255, 255, 255, 0.02)',
-                padding: '20px 35px',
-                borderRadius: '24px',
-                border: '1.5px solid var(--border)',
-                backdropFilter: 'blur(12px)'
+                padding: '1.5vh 2.5vw',
+                borderRadius: '16px',
+                border: '1px solid var(--border)',
+                backdropFilter: 'blur(12px)',
+                height: '8vh',
+                boxSizing: 'border-box',
+                flexShrink: 0
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <Tv size={36} style={{ color: 'var(--brand-teal)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
+                    <Tv size={28} style={{ color: 'var(--brand-teal)' }} />
                     <div>
-                        <h1 className="vibrant-text" style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-                            {tournament?.name || "Bags & Brats Scoreboard"}
+                        <h1 className="vibrant-text" style={{ fontSize: '2.8vh', fontWeight: '900', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                            {tournament?.name || "Bags & Brats"}
                         </h1>
-                        <p style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <p style={{ fontSize: '1.2vh', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             Arena Projector View
                         </p>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '0.8vw' }}>
                     <span style={{
-                        fontSize: '16px',
+                        fontSize: '1.4vh',
                         fontWeight: '800',
                         color: 'var(--brand-teal)',
                         background: 'var(--brand-teal-glow)',
-                        padding: '8px 16px',
-                        borderRadius: '16px',
-                        border: '1.5px solid var(--brand-teal)',
+                        padding: '0.6vh 1.2vw',
+                        borderRadius: '10px',
+                        border: '1px solid var(--brand-teal)',
                         textTransform: 'uppercase'
                     }}>
                         {tournament ? `Day ${tournament.current_day_index + 1}` : 'Day -'}
                     </span>
                     <span style={{
-                        fontSize: '16px',
+                        fontSize: '1.4vh',
                         fontWeight: '800',
                         color: 'white',
                         background: 'rgba(255,255,255,0.05)',
-                        padding: '8px 16px',
-                        borderRadius: '16px',
-                        border: '1.5px solid var(--border)',
+                        padding: '0.6vh 1.2vw',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border)',
                         textTransform: 'uppercase'
                     }}>
                         {tournament && tournament.current_round > 0 ? `Round ${tournament.current_round}` : 'Pending'}
@@ -405,15 +390,18 @@ const DisplayView = () => {
             {/* Giant Centered Timer Card */}
             <section style={{
                 background: 'rgba(255,255,255,0.01)',
-                border: '1.5px solid var(--border)',
-                borderRadius: '28px',
-                padding: '40px 20px',
+                border: '1px solid var(--border)',
+                borderRadius: '20px',
+                padding: '1.5vh 0',
                 textAlign: 'center',
-                position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
+                height: '24vh',
+                boxSizing: 'border-box',
+                flexShrink: 0,
+                position: 'relative',
                 overflow: 'hidden'
             }}>
                 <div style={{
@@ -421,98 +409,107 @@ const DisplayView = () => {
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: '300px',
-                    height: '300px',
-                    background: `radial-gradient(circle, ${timerConfig.color}15 0%, transparent 70%)`,
+                    width: '200px',
+                    height: '200px',
+                    background: `radial-gradient(circle, ${timerConfig.color}10 0%, transparent 70%)`,
                     zIndex: 0,
                     pointerEvents: 'none'
                 }} />
 
                 <motion.div
-                    animate={timerConfig.pulse ? { scale: [1, 1.03, 1] } : {}}
+                    animate={timerConfig.pulse ? { scale: [1, 1.02, 1] } : {}}
                     transition={{ repeat: Infinity, duration: 1, ease: "easeInOut" }}
                     style={{
                         fontFamily: 'monospace',
-                        fontSize: '150px',
+                        fontSize: '13vh',
                         fontWeight: '900',
                         lineHeight: 1,
                         color: timerConfig.color,
                         textShadow: timerConfig.shadow,
-                        letterSpacing: '-0.03em',
+                        letterSpacing: '-0.02em',
                         zIndex: 1,
-                        position: 'relative',
-                        marginBottom: '8px'
+                        position: 'relative'
                     }}
                 >
                     {timerConfig.text}
                 </motion.div>
 
                 <div style={{
-                    fontSize: '15px',
+                    fontSize: '1.3vh',
                     fontWeight: '800',
                     color: 'var(--text-muted)',
-                    letterSpacing: '0.2em',
+                    letterSpacing: '0.15em',
                     textTransform: 'uppercase',
                     zIndex: 1,
                     position: 'relative',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '6px',
+                    marginTop: '0.5vh'
                 }}>
-                    <Clock size={16} />
+                    <Clock size={12} />
                     {timerConfig.subText}
                 </div>
             </section>
 
             {/* Live Matches Grid Section */}
-            <main style={{ display: 'flex', flexDirection: 'column', gap: '20px', flexGrow: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2 style={{ fontSize: '24px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Trophy size={24} style={{ color: 'var(--brand-teal)' }} />
-                        Round Matchups & Live Scores
+            <main style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1vh',
+                height: '56vh',
+                boxSizing: 'border-box',
+                flexGrow: 1,
+                overflow: 'hidden'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, height: '3vh' }}>
+                    <h2 style={{ fontSize: '2vh', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Trophy size={18} style={{ color: 'var(--brand-teal)' }} />
+                        Live Scoreboard
                     </h2>
                     {currentRoundGames.length > 0 && (
-                        <span style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                            {currentRoundGames.filter(g => g.status === 'finalized').length} of {currentRoundGames.length} Completed
+                        <span style={{ fontSize: '1.4vh', color: 'var(--text-muted)', fontWeight: '600' }}>
+                            {currentRoundGames.filter(g => g.status === 'finalized').length} of {currentRoundGames.length} Complete
                         </span>
                     )}
                 </div>
 
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        layout
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))',
-                            gap: '24px'
-                        }}
-                    >
-                        {currentRoundGames.length > 0 ? (
-                            currentRoundGames.map((game) => (
-                                <CourtCard key={game._id} game={game} />
-                            ))
-                        ) : (
-                            <div style={{
-                                gridColumn: '1/-1',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: '120px 20px',
-                                background: 'rgba(255,255,255,0.01)',
-                                border: '1.5px dashed var(--border)',
-                                borderRadius: '24px',
-                                opacity: 0.4
-                            }}>
-                                <Trophy size={64} style={{ marginBottom: '16px', color: 'var(--text-muted)' }} />
-                                <h3 style={{ fontSize: '22px', fontWeight: '700' }}>No Active Matchups Available</h3>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginTop: '6px' }}>
-                                    Pairings have not been generated for the current round yet.
-                                </p>
-                            </div>
-                        )}
-                    </motion.div>
-                </AnimatePresence>
+                <div style={{ flexGrow: 1, height: '52vh', overflow: 'hidden' }}>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            layout
+                            style={{
+                                display: 'grid',
+                                gridTemplateColumns: getGridColumns(),
+                                gap: '1.5vh 1.5vw',
+                                height: '100%',
+                                boxSizing: 'border-box'
+                            }}
+                        >
+                            {currentRoundGames.length > 0 ? (
+                                currentRoundGames.map((game) => (
+                                    <CourtCard key={game._id} game={game} />
+                                ))
+                            ) : (
+                                <div style={{
+                                    gridColumn: '1/-1',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    height: '100%',
+                                    background: 'rgba(255,255,255,0.01)',
+                                    border: '1px dashed var(--border)',
+                                    borderRadius: '16px',
+                                    opacity: 0.3
+                                }}>
+                                    <Trophy size={36} style={{ marginBottom: '8px', color: 'var(--text-muted)' }} />
+                                    <h3 style={{ fontSize: '1.8vh', fontWeight: '700' }}>Waiting for Matchups...</h3>
+                                </div>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
             </main>
         </div>
     );

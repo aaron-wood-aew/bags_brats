@@ -395,6 +395,52 @@ def submit_score(game_id):
     
     return jsonify({"msg": "Score submitted successfully"}), 200
 
+
+@bp.route('/games/<game_id>/live-score', methods=['POST'])
+@jwt_required()
+def update_live_score(game_id):
+    """Update intermediate scores of an active game and broadcast to clients."""
+    current_user_id = get_jwt_identity()
+    data = request.json or {}
+    
+    try:
+        score1 = int(data.get('score1', 0))
+        score2 = int(data.get('score2', 0))
+    except (ValueError, TypeError):
+        return jsonify({"error": "Scores must be valid numbers"}), 400
+        
+    if score1 < 0 or score2 < 0:
+        return jsonify({"error": "Scores cannot be negative"}), 400
+        
+    game_data = mongo.db.games.find_one({"_id": ObjectId(game_id)})
+    if not game_data:
+        return jsonify({"error": "Game not found"}), 404
+        
+    # Check if user is a participant
+    all_players = game_data.get('team1_player_ids', []) + game_data.get('team2_player_ids', [])
+    if current_user_id not in all_players:
+        current_user = User.find_by_id(mongo, current_user_id)
+        if not current_user or current_user.role != 'admin':
+            return jsonify({"error": "You are not a participant in this game"}), 403
+            
+    if game_data.get('status') == 'finalized':
+        return jsonify({"error": "Game already finalized"}), 400
+        
+    mongo.db.games.update_one(
+        {"_id": ObjectId(game_id)},
+        {"$set": {"score1": score1, "score2": score2}}
+    )
+    
+    # Broadcast standings update (triggers display page socket refresh)
+    try:
+        from app.events import broadcast_standings_update
+        broadcast_standings_update(str(game_data['tournament_id']))
+    except Exception as e:
+        print(f"Live score broadcast failed: {e}")
+        
+    return jsonify({"msg": "Live score updated successfully"}), 200
+
+
 @bp.route('/tournaments/active/games', methods=['GET'])
 def get_active_tournament_games():
     tournament = Tournament.find_active(mongo)
