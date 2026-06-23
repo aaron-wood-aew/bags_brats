@@ -1,17 +1,17 @@
 {
   "drift": 0,
   "human_mins_at_last_crystallization": 0,
-  "last_crystallization": "2026-06-15T16:24:29.602Z",
-  "last_pulse": "2026-06-17T01:11:51.069617+00:00",
+  "last_crystallization": "2026-06-19T14:01:31.006Z",
+  "last_pulse": "2026-06-23T11:12:52.149231+00:00",
   "metrics": {
     "archaiforge_mins": 0,
     "generic_mins": 0,
     "human_mins": 0,
-    "peak_tension": 0.9805948661455766,
+    "peak_tension": 1.0037815593935715,
     "roi_multiplier": 0.0,
-    "turn_count": 78,
+    "turn_count": 112,
     "turns_since_log": 0
   },
-  "proof_hash": "0a332dca836df6b17f9b5850a83cbfe030bd395eebc239207b309283cf495839",
+  "proof_hash": "a75ed8f3cf0a26bade25cc92732e7135ffbcb580acd35f47856bfbfb483d6caa",
   "status": "HEALTHY"
 }

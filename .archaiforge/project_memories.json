@@ -206,7 +206,79 @@
       "approved_by": "auto_crystallized",
       "source": "crystallization_engine pattern detection",
       "added_at": "2026-06-15T16:24:29.600Z"
+    },
+    {
+      "id": "pm_cryst_98658cde",
+      "type": "learning",
+      "priority": "high",
+      "content": "Proven at T:15: Resolved VITE_API_URL port mismatch inside socket.js (changing port 5000 to port 5001) to fully restore Socket.IO real-time capabilities so that player views update instantly upon admin overrides.",
+      "tags": [
+        "proven",
+        "auto",
+        "tier2"
+      ],
+      "approved_by": "auto_crystallized",
+      "source": "outcomes.log T:15",
+      "added_at": "2026-06-19T14:01:31.005Z"
+    },
+    {
+      "id": "pm_cryst_da3b0c81",
+      "type": "learning",
+      "priority": "high",
+      "content": "Proven at T:24: Replaced all 25+ browser-native alerts across App.jsx, UserSettings, AdminDashboard, RoundManager, AdminUserManagement, and AdminGameManagement with a custom-coded glassmorphic Toast notifications engine featuring spring transitions, auto-dismiss timers, and a global broadcast bridge for non-React scopes like Axios interceptors. Verified with full container build.",
+      "tags": [
+        "proven",
+        "auto",
+        "tier2"
+      ],
+      "approved_by": "auto_crystallized",
+      "source": "outcomes.log T:24",
+      "added_at": "2026-06-19T14:01:31.005Z"
+    },
+    {
+      "id": "pm_cryst_356f450a",
+      "type": "learning",
+      "priority": "high",
+      "content": "Proven at T:28: Implemented direct Finalize and End Game action buttons on active game cards inside AdminGameManagement.jsx. Integrates with the custom glassmorphic confirmation modal, prompting the director before instantly stopping the game and broadcasting the standings update.",
+      "tags": [
+        "proven",
+        "auto",
+        "tier2"
+      ],
+      "approved_by": "auto_crystallized",
+      "source": "outcomes.log T:28",
+      "added_at": "2026-06-19T14:01:31.005Z"
+    },
+    {
+      "id": "pm_cryst_3fa521ca",
+      "type": "learning",
+      "priority": "normal",
+      "content": "Recurring pattern: \"config\" appears across 5 outcomes — this may be a system-level concern for bags_brats.",
+      "tags": [
+        "pattern",
+        "recurring",
+        "auto",
+        "config"
+      ],
+      "approved_by": "auto_crystallized",
+      "source": "crystallization_engine pattern detection",
+      "added_at": "2026-06-19T14:01:31.005Z"
+    },
+    {
+      "id": "pm_cryst_e8de1b52",
+      "type": "learning",
+      "priority": "normal",
+      "content": "Recurring pattern: \"history\" appears across 4 outcomes — this may be a system-level concern for bags_brats.",
+      "tags": [
+        "pattern",
+        "recurring",
+        "auto",
+        "history"
+      ],
+      "approved_by": "auto_crystallized",
+      "source": "crystallization_engine pattern detection",
+      "added_at": "2026-06-19T14:01:31.005Z"
     }
   ],
-  "last_updated": "2026-06-15T16:24:29.600Z"
+  "last_updated": "2026-06-19T14:01:31.005Z"
 }

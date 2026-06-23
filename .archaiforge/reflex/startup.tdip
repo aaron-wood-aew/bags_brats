@@ -1,5 +1,5 @@
 {
-  "id": "seed-1781540669603",
+  "id": "seed-1781877691007",
   "depth_layer": 1,
   "state": {
     "identity": {
@@ -130,9 +130,9 @@
         "tier4": "semantic search (LanceDB vectors)"
       }
     },
-    "initialized_at": "2026-06-15T16:24:29.603Z"
+    "initialized_at": "2026-06-19T14:01:31.007Z"
   },
-  "proof_hash": "867e069e7ff8bfb6eb61e5682897018e10596f3d78feadc2aa823004f85c9604",
-  "created_at": "2026-06-15T16:24:29.603Z",
+  "proof_hash": "d4345c40fe0714ec4ebabe2c2ae139d6bcdcc9a84fda4d4f3f03a2628081872b",
+  "created_at": "2026-06-19T14:01:31.007Z",
   "version": "8.2.1-dwell-binding"
 }

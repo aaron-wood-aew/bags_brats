@@ -10,6 +10,7 @@ import OAuthCallback from './pages/OAuthCallback';
 import UserSettings from './pages/UserSettings';
 import BigReveal from './pages/BigReveal';
 import GrandReveal from './pages/GrandReveal';
+import DisplayView from './pages/DisplayView';
 import PrivateRoute from './components/PrivateRoute';
 import { ToastProvider, showGlobalToast } from './context/ToastContext';
 
@@ -83,6 +84,7 @@ const App = () => {
               }
             />
             <Route path="/spectator" element={<SpectatorView />} />
+            <Route path="/display" element={<DisplayView />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>

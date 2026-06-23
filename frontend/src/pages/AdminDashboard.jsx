@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star, FileText, Download, Printer, Database, Upload, XCircle, CalendarPlus } from 'lucide-react';
+import { Trophy, Users, Sliders, Plus, LayoutList, Activity, Calendar, Check, X, ChevronLeft, ChevronRight, LogOut, LayoutDashboard, Star, FileText, Download, Printer, Database, Upload, XCircle, CalendarPlus, Tv } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminProxyRegister from '../components/AdminProxyRegister';
 import AdminUserManagement from '../components/AdminUserManagement';
@@ -462,6 +462,24 @@ const AdminDashboard = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <ThemeToggle />
+                    <button
+                        onClick={() => window.open('/display', '_blank')}
+                        style={{
+                            background: 'var(--brand-teal-glow)',
+                            border: '1px solid var(--brand-teal)',
+                            color: 'var(--brand-teal)',
+                            padding: '10px 16px',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '700'
+                        }}
+                    >
+                        <Tv size={18} />
+                        <span>Projector View</span>
+                    </button>
                     <button
                         onClick={() => navigate('/dashboard')}
                         style={{
