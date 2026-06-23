@@ -1120,24 +1120,44 @@ def get_top_teams():
         "status": "finalized"
     }))
     
-    # Calculate team scores (sum of points across all games)
-    team_scores = {}  # key = tuple of sorted player_ids
+    # Calculate team stats (points, wins, margin of victory)
+    team_stats = {}  # key = tuple of sorted player_ids, value = dict
     
     for g in games:
         t1_ids = tuple(sorted(g.get('team1_player_ids', [])))
         t2_ids = tuple(sorted(g.get('team2_player_ids', [])))
-        score1 = g.get('score1', 0) or 0
-        score2 = g.get('score2', 0) or 0
+        score1 = int(g.get('score1', 0) or 0)
+        score2 = int(g.get('score2', 0) or 0)
         
-        team_scores[t1_ids] = team_scores.get(t1_ids, 0) + score1
-        team_scores[t2_ids] = team_scores.get(t2_ids, 0) + score2
+        if t1_ids not in team_stats:
+            team_stats[t1_ids] = {"total_points": 0, "wins": 0, "margin_of_victory": 0}
+        if t2_ids not in team_stats:
+            team_stats[t2_ids] = {"total_points": 0, "wins": 0, "margin_of_victory": 0}
+            
+        # Sum points
+        team_stats[t1_ids]["total_points"] += score1
+        team_stats[t2_ids]["total_points"] += score2
+        
+        # Calculate wins
+        if score1 > score2:
+            team_stats[t1_ids]["wins"] += 1
+        elif score2 > score1:
+            team_stats[t2_ids]["wins"] += 1
+            
+        # Calculate margin of victory (point differential)
+        team_stats[t1_ids]["margin_of_victory"] += (score1 - score2)
+        team_stats[t2_ids]["margin_of_victory"] += (score2 - score1)
     
-    # Sort by total points
-    sorted_teams = sorted(team_scores.items(), key=lambda x: x[1], reverse=True)
+    # Sort by total points desc, then wins desc, then margin of victory desc
+    sorted_teams = sorted(
+        team_stats.items(),
+        key=lambda x: (x[1]["total_points"], x[1]["wins"], x[1]["margin_of_victory"]),
+        reverse=True
+    )
     
     # Build top 3
     top_teams = []
-    for rank, (player_ids, total_points) in enumerate(sorted_teams[:3], 1):
+    for rank, (player_ids, stats) in enumerate(sorted_teams[:3], 1):
         player_names = []
         for pid in player_ids:
             u = User.find_by_id(mongo, pid)
@@ -1148,7 +1168,9 @@ def get_top_teams():
             "rank": rank,
             "player_ids": list(player_ids),
             "player_names": player_names,
-            "total_points": total_points
+            "total_points": stats["total_points"],
+            "wins": stats["wins"],
+            "margin_of_victory": stats["margin_of_victory"]
         })
     
     return jsonify(top_teams), 200
