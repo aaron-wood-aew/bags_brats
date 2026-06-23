@@ -52,11 +52,19 @@ const PlayerDashboard = () => {
             sessionStorage.setItem('bb_score1', score1.toString());
             sessionStorage.setItem('bb_score2', score2.toString());
 
+            const userId = user.id || user._id;
+            const isOnTeam1 = currentGame.team1_player_ids?.includes(userId);
+            const serverScore1 = isOnTeam1 ? currentGame.score1 : currentGame.score2;
+            const serverScore2 = isOnTeam1 ? currentGame.score2 : currentGame.score1;
+
+            // Prevent loops by skipping updates if the local state matches what the server sent
+            if (score1 === serverScore1 && score2 === serverScore2) {
+                return;
+            }
+
             const delayDebounceFn = setTimeout(async () => {
                 try {
                     const token = localStorage.getItem('token');
-                    const userId = user.id || user._id;
-                    const isOnTeam1 = currentGame.team1_player_ids?.includes(userId);
                     
                     // Map local display scores back to API teams
                     const apiScore1 = isOnTeam1 ? score1 : score2;
@@ -76,6 +84,27 @@ const PlayerDashboard = () => {
             return () => clearTimeout(delayDebounceFn);
         }
     }, [score1, score2, currentGame?._id, currentGame?.status]);
+
+    // Sync local scores with server game scores when updated via socket or polling
+    useEffect(() => {
+        if (currentGame && currentGame.status === 'active') {
+            // Ignore server updates if local user tapped recently to prevent lag race conditions
+            if (Date.now() - lastTapRef.current < 2000) {
+                return;
+            }
+            const userId = user.id || user._id;
+            const isOnTeam1 = currentGame.team1_player_ids?.includes(userId);
+            const serverScore1 = isOnTeam1 ? currentGame.score1 : currentGame.score2;
+            const serverScore2 = isOnTeam1 ? currentGame.score2 : currentGame.score1;
+            
+            if (score1 !== serverScore1 || score2 !== serverScore2) {
+                setScore1(serverScore1);
+                setScore2(serverScore2);
+                sessionStorage.setItem('bb_score1', serverScore1.toString());
+                sessionStorage.setItem('bb_score2', serverScore2.toString());
+            }
+        }
+    }, [currentGame?.score1, currentGame?.score2]);
 
     // Reset scores when a NEW game starts (different game ID) or load initial scores from server
     useEffect(() => {

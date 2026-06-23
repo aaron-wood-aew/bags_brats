@@ -163,6 +163,8 @@ const DisplayView = () => {
     useEffect(() => {
         fetchData();
 
+        const pollInterval = setInterval(fetchData, 5000); // 5-second polling fallback
+
         SocketService.on('standings_updated', fetchData);
         SocketService.on('pairings_revealed', fetchData);
         
@@ -177,6 +179,7 @@ const DisplayView = () => {
         });
 
         return () => {
+            clearInterval(pollInterval);
             SocketService.off('standings_updated', fetchData);
             SocketService.off('pairings_revealed', fetchData);
             SocketService.off('live_score_updated');
