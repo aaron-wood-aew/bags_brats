@@ -143,6 +143,8 @@ const DisplayView = () => {
         lastTickTime: null
     });
 
+    const serverOffsetRef = useRef(0);
+
     const playDoubleBeep = () => {
         try {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -277,6 +279,11 @@ const DisplayView = () => {
             const tRes = await axios.get(`${API_URL}/tournaments/active`);
             setTournament(tRes.data);
             if (tRes.data) {
+                if (tRes.data.server_time) {
+                    const serverTimeMs = new Date(tRes.data.server_time).getTime();
+                    const clientTimeMs = Date.now();
+                    serverOffsetRef.current = serverTimeMs - clientTimeMs;
+                }
                 SocketService.connect(tRes.data._id);
                 const gRes = await axios.get(`${API_URL}/tournaments/active/games`);
                 setGames(gRes.data);
@@ -338,7 +345,7 @@ const DisplayView = () => {
             // Check if active games are in pre-round countdown
             const firstActive = activeGames[0];
             const startMs = firstActive?.start_time ? new Date(firstActive.start_time).getTime() : 0;
-            const nowMs = Date.now();
+            const nowMs = Date.now() + serverOffsetRef.current;
             
             if (startMs > nowMs) {
                 setRoundTimerStatus('starting');
@@ -368,7 +375,7 @@ const DisplayView = () => {
         }
 
         const tick = () => {
-            const now = new Date().getTime();
+            const now = Date.now() + serverOffsetRef.current;
             const diff = Math.max(0, Math.floor((timerEndTime - now) / 1000));
             setRoundTimer(diff);
 

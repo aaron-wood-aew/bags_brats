@@ -106,6 +106,7 @@ def get_current_game():
     game_obj = Game(game_data).to_dict()
     game_obj['team1_player_names'] = [User.find_by_id(mongo, pid).name for pid in game_data.get('team1_player_ids', [])]
     game_obj['team2_player_names'] = [User.find_by_id(mongo, pid).name for pid in game_data.get('team2_player_ids', [])]
+    game_obj['server_time'] = datetime.utcnow().isoformat() + 'Z'
     
     return jsonify(game_obj), 200
 
@@ -494,6 +495,7 @@ def get_active_tournament_games():
         for pid in g.get('team2_player_ids', []):
             u = User.find_by_id(mongo, pid)
             game_obj['team2_player_names'].append(u.name if u else "Unknown")
+        game_obj['server_time'] = datetime.utcnow().isoformat() + 'Z'
         enriched_games.append(game_obj)
         
     return jsonify(enriched_games), 200
@@ -516,6 +518,7 @@ def get_active_tournament():
     from app.scheduler import is_checkin_window_open
     is_open, _ = is_checkin_window_open(mongo)
     data['check_in_currently_open'] = is_open
+    data['server_time'] = datetime.utcnow().isoformat() + 'Z'
     
     return jsonify(data), 200
 
@@ -530,7 +533,7 @@ def get_standings():
         "status": "finalized"
     }))
     
-    standings = {} # {user_id: {name: "", wins: 0, games: 0}}
+    standings = {} # {user_id: {name: "", wins: 0, games_played: 0, total_points: 0, margin: 0, daily_stats: {}}}
     
     for game in games:
         # Determine winning team
@@ -543,24 +546,69 @@ def get_standings():
         all_players = [str(pid) for pid in game['team1_player_ids'] + game['team2_player_ids']]
         win_ids = [str(pid) for pid in win_ids]
         
+        day_index = game.get('day_index', 0)
+        
         for pid in all_players:
             if pid not in standings:
                 user = User.find_by_id(mongo, pid)
-                standings[pid] = {"name": user.name if user else "Unknown", "wins": 0, "games_played": 0, "total_points": 0}
+                standings[pid] = {
+                    "name": user.name if user else "Unknown",
+                    "wins": 0,
+                    "games_played": 0,
+                    "total_points": 0,
+                    "margin": 0,
+                    "daily_stats": {}
+                }
+            
+            if day_index not in standings[pid]["daily_stats"]:
+                standings[pid]["daily_stats"][day_index] = {
+                    "day_index": day_index,
+                    "wins": 0,
+                    "games_played": 0,
+                    "total_points": 0,
+                    "margin": 0
+                }
             
             standings[pid]["games_played"] += 1
-            if pid in [str(pid) for pid in game['team1_player_ids']]:
-                standings[pid]["total_points"] += game['score1']
+            standings[pid]["daily_stats"][day_index]["games_played"] += 1
+            
+            if pid in [str(x) for x in game['team1_player_ids']]:
+                own_score = game['score1']
+                opp_score = game['score2']
             else:
-                standings[pid]["total_points"] += game['score2']
+                own_score = game['score2']
+                opp_score = game['score1']
+                
+            margin_val = own_score - opp_score
+            
+            standings[pid]["total_points"] += own_score
+            standings[pid]["daily_stats"][day_index]["total_points"] += own_score
+            
+            standings[pid]["margin"] += margin_val
+            standings[pid]["daily_stats"][day_index]["margin"] += margin_val
 
             if pid in win_ids:
                 standings[pid]["wins"] += 1
+                standings[pid]["daily_stats"][day_index]["wins"] += 1
                 
-    # Convert to list and sort by points (highest first), then wins, then fewest games
+    # Convert daily_stats dict to sorted list
+    standings_list = []
+    for pid, v in standings.items():
+        daily_list = sorted(v["daily_stats"].values(), key=lambda x: x["day_index"])
+        standings_list.append({
+            "user_id": pid,
+            "name": v["name"],
+            "wins": v["wins"],
+            "games_played": v["games_played"],
+            "total_points": v["total_points"],
+            "margin": v["margin"],
+            "daily_stats": daily_list
+        })
+        
+    # Sort standings by: total_points desc, wins desc, margin desc, fewest games asc
     sorted_standings = sorted(
-        [{"user_id": str(k), **v} for k, v in standings.items()],
-        key=lambda x: (x['total_points'], x['wins'], -x['games_played']),
+        standings_list,
+        key=lambda x: (x['total_points'], x['wins'], x['margin'], -x['games_played']),
         reverse=True
     )
     

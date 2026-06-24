@@ -1260,7 +1260,7 @@ const AdminDashboard = () => {
                 )}
 
                 {activeTab === 'overview' && (
-                    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
                         <TournamentStandings />
                     </div>
                 )}

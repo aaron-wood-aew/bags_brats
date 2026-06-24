@@ -36,6 +36,7 @@ const PlayerDashboard = () => {
     const lastGameIdRef = useRef(null);
     const currentGameRef = useRef(null);
     const userRef = useRef(null);
+    const serverOffsetRef = useRef(0);
 
     // Keep refs updated to prevent stale socket closures
     useEffect(() => {
@@ -56,7 +57,7 @@ const PlayerDashboard = () => {
     const isTimeExpired = () => {
         if (!currentGame || !currentGame.end_time) return false;
         const end = new Date(currentGame.end_time).getTime();
-        const now = Date.now();
+        const now = Date.now() + serverOffsetRef.current;
         // Allow a 60-second buffer
         return now > (end + 60000);
     };
@@ -64,7 +65,7 @@ const PlayerDashboard = () => {
     const isBufferActive = () => {
         if (!currentGame || !currentGame.end_time) return false;
         const end = new Date(currentGame.end_time).getTime();
-        const now = Date.now();
+        const now = Date.now() + serverOffsetRef.current;
         return now > end && now <= (end + 60000);
     };
 
@@ -218,6 +219,11 @@ const PlayerDashboard = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setTournament(tRes.data);
+                if (tRes.data && tRes.data.server_time) {
+                    const serverTimeMs = new Date(tRes.data.server_time).getTime();
+                    const clientTimeMs = Date.now();
+                    serverOffsetRef.current = serverTimeMs - clientTimeMs;
+                }
 
                 if (tRes.data) {
                     SocketService.connect(tRes.data._id);
@@ -242,6 +248,11 @@ const PlayerDashboard = () => {
                 });
                 if (gRes.data) {
                     setCurrentGame(gRes.data);
+                    if (gRes.data.server_time) {
+                        const serverTimeMs = new Date(gRes.data.server_time).getTime();
+                        const clientTimeMs = Date.now();
+                        serverOffsetRef.current = serverTimeMs - clientTimeMs;
+                    }
                     if (gRes.data.status === 'active') {
                         setActiveTab('live');
                     }
@@ -325,7 +336,7 @@ const PlayerDashboard = () => {
         const interval = setInterval(() => {
             const start = currentGame.start_time ? new Date(currentGame.start_time).getTime() : 0;
             const end = new Date(currentGame.end_time).getTime();
-            const now = new Date().getTime();
+            const now = Date.now() + serverOffsetRef.current;
             
             if (now < start) {
                 setTimer(Math.max(0, Math.floor((start - now) / 1000)));
