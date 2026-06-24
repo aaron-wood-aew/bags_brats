@@ -2,16 +2,16 @@
   "drift": 0,
   "human_mins_at_last_crystallization": 0,
   "last_crystallization": "2026-06-19T14:01:31.006Z",
-  "last_pulse": "2026-06-24T11:47:07.521656+00:00",
+  "last_pulse": "2026-06-24T11:58:52.091129+00:00",
   "metrics": {
     "archaiforge_mins": 0,
     "generic_mins": 0,
     "human_mins": 0,
     "peak_tension": 1.0037815593935715,
     "roi_multiplier": 0.0,
-    "turn_count": 131,
+    "turn_count": 133,
     "turns_since_log": 0
   },
-  "proof_hash": "36ab384be6bb425703d96eb2186f0c84ce60996c3b37db98a78fc2e6b4da75da",
+  "proof_hash": "df7b32138fd7a43d5343604e672e45e4ae406a529683bd2abe715af9bb761559",
   "status": "HEALTHY"
 }

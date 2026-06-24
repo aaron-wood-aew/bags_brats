@@ -60,3 +60,4 @@
 [T125] [tier:2] Removed subtext under the DisplayView clock to clean up the UI, and implemented a 1-minute score submission buffer after the round ends. Created a scheduler job to automatically finalize expired active games when the buffer finishes. Pushed changes to origin dev.
 [T128] [tier:2] Merged and deployed all Day 2 final-countdown audio warning features, pre-start ticks, score expiration locks, and the 1-minute submission buffer from dev to main production branch.
 [T131] [tier:2] Pushed server time sync offsets and Leaderboard detailed nightly breakdown with point margins to git origin dev branch, triggering development deployment on Railway.
+[T133] [tier:2] Implemented sortable overall and dynamic day column headers in Leaderboard Detailed Stats view, allowing Tournament Directors to sort and rank players by daily stats. Pushed all changes to origin dev branch.
