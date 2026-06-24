@@ -9,6 +9,7 @@ const TournamentStandings = () => {
     const [tournament, setTournament] = useState(null);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState('simple'); // 'simple' or 'detailed'
+    const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'descending' });
 
     const fetchStandingsAndTournament = async () => {
         try {
@@ -38,6 +39,75 @@ const TournamentStandings = () => {
         };
     }, []);
 
+    const handleSort = (key) => {
+        let direction = 'descending';
+        if (sortConfig.key === key) {
+            if (sortConfig.direction === 'descending') {
+                direction = 'ascending';
+            } else {
+                // Cycle back to default sorting order
+                setSortConfig({ key: 'default', direction: 'descending' });
+                return;
+            }
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortedStandings = () => {
+        if (!sortConfig || sortConfig.key === 'default') {
+            return [...standings];
+        }
+
+        const sorted = [...standings].sort((a, b) => {
+            const isDesc = sortConfig.direction === 'descending';
+
+            if (sortConfig.key === 'name') {
+                const nameA = a.name.toLowerCase();
+                const nameB = b.name.toLowerCase();
+                if (nameA < nameB) return isDesc ? 1 : -1;
+                if (nameA > nameB) return isDesc ? -1 : 1;
+                return 0;
+            }
+
+            if (sortConfig.key.startsWith('day_')) {
+                const dayIdx = parseInt(sortConfig.key.split('_')[1]);
+                const dayA = a.daily_stats?.find(d => d.day_index === dayIdx);
+                const dayB = b.daily_stats?.find(d => d.day_index === dayIdx);
+
+                const playedA = dayA && dayA.games_played > 0;
+                const playedB = dayB && dayB.games_played > 0;
+                
+                if (!playedA && !playedB) return 0;
+                if (!playedA) return 1; // Put non-playing players at the bottom
+                if (!playedB) return -1;
+
+                // Sort by Wins on that day first
+                if (dayA.wins !== dayB.wins) {
+                    return isDesc ? dayB.wins - dayA.wins : dayA.wins - dayB.wins;
+                }
+                // Tie-breaker 1: Total points on that day
+                if (dayA.total_points !== dayB.total_points) {
+                    return isDesc ? dayB.total_points - dayA.total_points : dayA.total_points - dayB.total_points;
+                }
+                // Tie-breaker 2: Margin on that day
+                if (dayA.margin !== dayB.margin) {
+                    return isDesc ? dayB.margin - dayA.margin : dayA.margin - dayB.margin;
+                }
+                return 0;
+            }
+
+            // Overall fields
+            const valA = a[sortConfig.key] !== undefined ? a[sortConfig.key] : 0;
+            const valB = b[sortConfig.key] !== undefined ? b[sortConfig.key] : 0;
+
+            if (valA < valB) return isDesc ? 1 : -1;
+            if (valA > valB) return isDesc ? -1 : 1;
+            return 0;
+        });
+
+        return sorted;
+    };
+
     if (loading) return <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>Calculating Standings...</div>;
     if (standings.length === 0) return (
         <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
@@ -45,6 +115,44 @@ const TournamentStandings = () => {
             <p>Standings will appear once games are finalized.</p>
         </div>
     );
+
+    const sortedStandings = getSortedStandings();
+
+    const renderHeader = (label, sortKey, style = {}) => {
+        const isSorted = sortConfig.key === sortKey;
+        const indicator = isSorted ? (sortConfig.direction === 'descending' ? ' ▼' : ' ▲') : '';
+        return (
+            <th
+                onClick={() => handleSort(sortKey)}
+                style={{
+                    padding: '10px 8px',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    color: isSorted ? 'var(--brand-teal)' : 'var(--text-muted)',
+                    transition: 'color 0.2s',
+                    ...style
+                }}
+                onMouseEnter={(e) => {
+                    if (!isSorted) e.currentTarget.style.color = 'white';
+                }}
+                onMouseLeave={(e) => {
+                    if (!isSorted) e.currentTarget.style.color = 'var(--text-muted)';
+                }}
+            >
+                <div style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '4px', 
+                    justifyContent: style.textAlign === 'center' ? 'center' : 'flex-start', 
+                    width: '100%' 
+                }}>
+                    {label}
+                    <span style={{ fontSize: '10px', color: 'var(--brand-teal)', fontWeight: 'bold' }}>{indicator}</span>
+                </div>
+            </th>
+        );
+    };
 
     return (
         <div className="glass-card" style={{ padding: '24px', width: '100%', boxSizing: 'border-box' }}>
@@ -105,7 +213,7 @@ const TournamentStandings = () => {
 
             {viewMode === 'simple' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {standings.map((player, index) => (
+                    {sortedStandings.map((player, index) => (
                         <div
                             key={player.user_id}
                             style={{
@@ -155,20 +263,22 @@ const TournamentStandings = () => {
                         <thead>
                             <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.05em' }}>
                                 <th style={{ padding: '10px 8px', fontWeight: '800', width: '50px' }}>Rank</th>
-                                <th style={{ padding: '10px 8px', fontWeight: '800' }}>Player</th>
-                                <th style={{ padding: '10px 8px', fontWeight: '800', textAlign: 'center', width: '60px' }}>Wins</th>
-                                <th style={{ padding: '10px 8px', fontWeight: '800', textAlign: 'center', width: '60px' }}>Games</th>
-                                <th style={{ padding: '10px 8px', fontWeight: '800', textAlign: 'center', width: '70px' }}>Margin</th>
-                                <th style={{ padding: '10px 8px', fontWeight: '800', textAlign: 'center', width: '80px' }}>Total Pts</th>
-                                {tournament?.dates?.map((date, idx) => (
-                                    <th key={idx} style={{ padding: '10px 8px', fontWeight: '800', textAlign: 'center', borderLeft: '1px solid var(--border)', width: '140px' }}>
-                                        Day {idx + 1} (W / Pts / Mar)
-                                    </th>
-                                ))}
+                                {renderHeader('Player', 'name')}
+                                {renderHeader('Wins', 'wins', { textAlign: 'center', width: '60px' })}
+                                {renderHeader('Games', 'games_played', { textAlign: 'center', width: '60px' })}
+                                {renderHeader('Margin', 'margin', { textAlign: 'center', width: '70px' })}
+                                {renderHeader('Total Pts', 'total_points', { textAlign: 'center', width: '80px' })}
+                                {tournament?.dates?.map((date, idx) => 
+                                    renderHeader(`Day ${idx + 1} (W / Pts / Mar)`, `day_${idx}`, { 
+                                        textAlign: 'center', 
+                                        borderLeft: '1px solid var(--border)', 
+                                        width: '140px' 
+                                    })
+                                )}
                             </tr>
                         </thead>
                         <tbody>
-                            {standings.map((player, index) => (
+                            {sortedStandings.map((player, index) => (
                                 <tr
                                     key={player.user_id}
                                     style={{
